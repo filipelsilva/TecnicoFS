@@ -36,9 +36,15 @@ void errorParse(){
     exit(EXIT_FAILURE);
 }
 
-void processInput(char *input_file){
+void processInput(char *inputfile){
     char line[MAX_INPUT_SIZE];
-    FILE *fp = fopen(input_file, "r");
+    FILE *fp = fopen(inputfile, "r");
+	
+	/* Error check for inputfile */	
+	if (fp == NULL) {	
+		fprintf(stderr, "Error: could not open file");
+    	exit(EXIT_FAILURE);
+	}
 
     /* break loop with ^Z or ^D */
     while (fgets(line, sizeof(line)/sizeof(char), fp)) {
@@ -137,6 +143,12 @@ void applyCommands(){
 int main(int argc, char* argv[]) {
     /* init filesystem */
     init_fs();
+	
+	/* checks if the number of arguments is correct */
+	if (argc != 4) {
+		fprintf(stderr, "Error: invalid arguments");
+		exit(EXIT_FAILURE);
+	}
 
     /* process input and print tree */
     processInput(argv[1]);
