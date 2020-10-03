@@ -1,4 +1,6 @@
 *.zip
-tecnicofs
 *.o
 *.swp
+tecnicofs
+inputfile
+outputfile

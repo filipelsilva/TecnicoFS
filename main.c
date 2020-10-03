@@ -42,7 +42,7 @@ void processInput(char *inputfile){
 	
 	/* Error check for inputfile */	
 	if (fp == NULL) {	
-		fprintf(stderr, "Error: could not open file");
+		fprintf(stderr, "Error: could not open file\n");
     	exit(EXIT_FAILURE);
 	}
 
@@ -145,8 +145,8 @@ int main(int argc, char* argv[]) {
     init_fs();
 	
 	/* checks if the number of arguments is correct */
-	if (argc != 4) {
-		fprintf(stderr, "Error: invalid arguments");
+	if (argc != 5) {
+		fprintf(stderr, "Error: invalid arguments\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -160,7 +160,9 @@ int main(int argc, char* argv[]) {
 	//printf("TecnicoFS completed in %.4f seconds.\n", elapsed);
 	
 	applyCommands();
-    print_tecnicofs_tree(stdout);
+
+	FILE *fp = fopen(argv[2], "w");
+    print_tecnicofs_tree(fp);
 
     /* release allocated memory */
     destroy_fs();
