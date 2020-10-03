@@ -3,6 +3,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 #include "fs/operations.h"
 
 #define MAX_COMMANDS 150000
@@ -139,7 +140,14 @@ int main(int argc, char* argv[]) {
 
     /* process input and print tree */
     processInput(argv[1]);
-    applyCommands();
+    
+	/* A FAZER: TIMER */
+	//time_t begin, end;
+	//time(&begin);
+	//time(&end);
+	//printf("TecnicoFS completed in %.4ld seconds.", (end - begin));
+	
+	applyCommands();
     print_tecnicofs_tree(stdout);
 
     /* release allocated memory */
