@@ -15,6 +15,19 @@ char inputCommands[MAX_COMMANDS][MAX_INPUT_SIZE];
 int numberCommands = 0;
 int headQueue = 0;
 
+/* File opening with NULL checker */
+FILE* openFile(char* name, char* mode) {
+	FILE *fp = fopen(name, mode);
+	
+	/* Error check for inputfile */	
+	if (fp == NULL) {	
+		fprintf(stderr, "Error: could not open file\n");
+    	exit(EXIT_FAILURE);
+	}
+	
+	return fp;
+}
+
 int insertCommand(char* data) {
     if(numberCommands != MAX_COMMANDS) {
         strcpy(inputCommands[numberCommands++], data);
@@ -36,18 +49,12 @@ void errorParse(){
     exit(EXIT_FAILURE);
 }
 
-void processInput(char *inputfile){
+void processInput(char *name){
     char line[MAX_INPUT_SIZE];
-    FILE *fp = fopen(inputfile, "r");
-	
-	/* Error check for inputfile */	
-	if (fp == NULL) {	
-		fprintf(stderr, "Error: could not open file\n");
-    	exit(EXIT_FAILURE);
-	}
+    FILE *inputfile = openFile(name, "r");
 
     /* break loop with ^Z or ^D */
-    while (fgets(line, sizeof(line)/sizeof(char), fp)) {
+    while (fgets(line, sizeof(line)/sizeof(char), inputfile)) {
         char token, type;
         char name[MAX_INPUT_SIZE];
 
@@ -87,6 +94,8 @@ void processInput(char *inputfile){
             }
         }
     }
+	
+	fclose(inputfile);
 }
 
 void applyCommands(){
@@ -161,8 +170,9 @@ int main(int argc, char* argv[]) {
 	
 	applyCommands();
 
-	FILE *fp = fopen(argv[2], "w");
-    print_tecnicofs_tree(fp);
+	FILE *outputfile = openFile(argv[2], "w");
+    print_tecnicofs_tree(outputfile);
+	fclose(outputfile);
 
     /* release allocated memory */
     destroy_fs();
