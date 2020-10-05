@@ -17,7 +17,7 @@ int headQueue = 0;
 
 /* File opening with NULL checker */
 FILE* openFile(char* name, char* mode) {
-	FILE *fp = fopen(name, mode);
+	FILE* fp = fopen(name, mode);
 	
 	/* Error check for inputfile */	
 	if (fp == NULL) {	
@@ -49,12 +49,11 @@ void errorParse(){
     exit(EXIT_FAILURE);
 }
 
-void processInput(char *name){
+void processInput(FILE* file){
     char line[MAX_INPUT_SIZE];
-    FILE *inputfile = openFile(name, "r");
 
     /* break loop with ^Z or ^D */
-    while (fgets(line, sizeof(line)/sizeof(char), inputfile)) {
+    while (fgets(line, sizeof(line)/sizeof(char), file)) {
         char token, type;
         char name[MAX_INPUT_SIZE];
 
@@ -94,8 +93,6 @@ void processInput(char *name){
             }
         }
     }
-	
-	fclose(inputfile);
 }
 
 void applyCommands(){
@@ -159,8 +156,10 @@ int main(int argc, char* argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-    /* process input and print tree */
-    processInput(argv[1]);
+    /* process input */
+    FILE* inputfile = openFile(argv[1], "r");
+	processInput(inputfile);
+	fclose(inputfile);
     
 	/* A FAZER: TIMER */
 	//clock_t start = clock();
@@ -170,6 +169,7 @@ int main(int argc, char* argv[]) {
 	
 	applyCommands();
 
+    /* print tree */
 	FILE *outputfile = openFile(argv[2], "w");
     print_tecnicofs_tree(outputfile);
 	fclose(outputfile);
