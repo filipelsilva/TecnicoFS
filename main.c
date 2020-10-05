@@ -15,6 +15,26 @@ char inputCommands[MAX_COMMANDS][MAX_INPUT_SIZE];
 int numberCommands = 0;
 int headQueue = 0;
 
+/* Filenames for the inputfile and outputfile */
+char *outputfile = NULL;
+char *inputfile = NULL;
+
+/* Parser for the arguments */
+int argumentParser(int argc, char* argv[]) {
+	/* checks if the number of arguments is correct */
+	if (argc != 5) {
+		fprintf(stderr, "Error: invalid arguments\n");
+		exit(EXIT_FAILURE);
+	}
+	
+	inputfile = argv[1];
+	outputfile = argv[2];
+	numberThreads = atoi(argv[3]);
+	/* TODO: add the other arguments */
+	
+	return 0;
+}
+
 /* File opening with NULL checker */
 FILE* openFile(char* name, char* mode) {
 	FILE *fp = fopen(name, mode);
@@ -153,14 +173,11 @@ int main(int argc, char* argv[]) {
     /* init filesystem */
     init_fs();
 	
-	/* checks if the number of arguments is correct */
-	if (argc != 5) {
-		fprintf(stderr, "Error: invalid arguments\n");
-		exit(EXIT_FAILURE);
-	}
+	/* parsing arguments */
+	argumentParser(argc, argv);
 
     /* process input and print tree */
-    processInput(argv[1]);
+    processInput(inputfile);
     
 	/* A FAZER: TIMER */
 	//clock_t start = clock();
@@ -170,9 +187,9 @@ int main(int argc, char* argv[]) {
 	
 	applyCommands();
 
-	FILE *outputfile = openFile(argv[2], "w");
-    print_tecnicofs_tree(outputfile);
-	fclose(outputfile);
+	FILE *output = openFile(outputfile, "w");
+    print_tecnicofs_tree(output);
+	fclose(output);
 
     /* release allocated memory */
     destroy_fs();
