@@ -16,8 +16,8 @@ int numberCommands = 0;
 int headQueue = 0;
 
 /* Filenames for the inputfile and outputfile */
-char *outputfile = NULL;
-char *inputfile = NULL;
+char* outputfile = NULL;
+char* inputfile = NULL;
 
 /* Parser for the arguments */
 int argumentParser(int argc, char* argv[]) {
@@ -37,7 +37,7 @@ int argumentParser(int argc, char* argv[]) {
 
 /* File opening with NULL checker */
 FILE* openFile(char* name, char* mode) {
-	FILE *fp = fopen(name, mode);
+	FILE* fp = fopen(name, mode);
 	
 	/* Error check for inputfile */	
 	if (fp == NULL) {	
@@ -69,12 +69,11 @@ void errorParse(){
     exit(EXIT_FAILURE);
 }
 
-void processInput(char *name){
+void processInput(FILE* file){
     char line[MAX_INPUT_SIZE];
-    FILE *inputfile = openFile(name, "r");
 
     /* break loop with ^Z or ^D */
-    while (fgets(line, sizeof(line)/sizeof(char), inputfile)) {
+    while (fgets(line, sizeof(line)/sizeof(char), file)) {
         char token, type;
         char name[MAX_INPUT_SIZE];
 
@@ -114,8 +113,6 @@ void processInput(char *name){
             }
         }
     }
-	
-	fclose(inputfile);
 }
 
 void applyCommands(){
@@ -176,8 +173,10 @@ int main(int argc, char* argv[]) {
 	/* parsing arguments */
 	argumentParser(argc, argv);
 
-    /* process input and print tree */
-    processInput(inputfile);
+    /* process input */
+    FILE* input = openFile(inputfile, "r");
+	processInput(input);
+	fclose(input);
     
 	/* A FAZER: TIMER */
 	//clock_t start = clock();
@@ -187,6 +186,7 @@ int main(int argc, char* argv[]) {
 	
 	applyCommands();
 
+	/* print tree */
 	FILE *output = openFile(outputfile, "w");
     print_tecnicofs_tree(output);
 	fclose(output);
