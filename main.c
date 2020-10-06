@@ -15,6 +15,24 @@ char inputCommands[MAX_COMMANDS][MAX_INPUT_SIZE];
 int numberCommands = 0;
 int headQueue = 0;
 
+/* Filenames for the inputfile and outputfile */
+char* outputfile = NULL;
+char* inputfile = NULL;
+
+/* Parser for the arguments */
+void argumentParser(int argc, char* argv[]) {
+	/* checks if the number of arguments is correct */
+	if (argc != 5) {
+		fprintf(stderr, "Error: invalid arguments\n");
+		exit(EXIT_FAILURE);
+	}
+	
+	inputfile = argv[1];
+	outputfile = argv[2];
+	numberThreads = atoi(argv[3]);
+	/* TODO: add the other arguments */
+}
+
 /* File opening with NULL checker */
 FILE* openFile(char* name, char* mode) {
 	FILE* fp = fopen(name, mode);
@@ -22,7 +40,7 @@ FILE* openFile(char* name, char* mode) {
 	/* Error check for inputfile */	
 	if (fp == NULL) {	
 		fprintf(stderr, "Error: could not open file\n");
-    	exit(EXIT_FAILURE);
+    	exit(TECNICOFS_ERROR_FILE_NOT_FOUND);
 	}
 	
 	return fp;
@@ -49,7 +67,7 @@ void errorParse(){
     exit(EXIT_FAILURE);
 }
 
-void processInput(FILE* file){
+void processInput(FILE *file){
     char line[MAX_INPUT_SIZE];
 
     /* break loop with ^Z or ^D */
@@ -93,6 +111,8 @@ void processInput(FILE* file){
             }
         }
     }
+	
+	fclose(inputfile);
 }
 
 void applyCommands(){
@@ -150,16 +170,13 @@ int main(int argc, char* argv[]) {
     /* init filesystem */
     init_fs();
 	
-	/* checks if the number of arguments is correct */
-	if (argc != 5) {
-		fprintf(stderr, "Error: invalid arguments\n");
-		exit(EXIT_FAILURE);
-	}
+	/* parsing arguments */
+	argumentParser(argc, argv);
 
     /* process input */
-    FILE* inputfile = openFile(argv[1], "r");
-	processInput(inputfile);
-	fclose(inputfile);
+    FILE* input = openFile(inputfile, "r");
+	processInput(input);
+	fclose(input);
     
 	/* A FAZER: TIMER */
 	//clock_t start = clock();
@@ -169,10 +186,10 @@ int main(int argc, char* argv[]) {
 	
 	applyCommands();
 
-    /* print tree */
-	FILE *outputfile = openFile(argv[2], "w");
-    print_tecnicofs_tree(outputfile);
-	fclose(outputfile);
+	/* print tree */
+	FILE *output = openFile(outputfile, "w");
+    print_tecnicofs_tree(output);
+	fclose(output);
 
     /* release allocated memory */
     destroy_fs();
