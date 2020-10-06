@@ -111,8 +111,6 @@ void processInput(FILE *file){
             }
         }
     }
-	
-	fclose(inputfile);
 }
 
 void applyCommands(){
