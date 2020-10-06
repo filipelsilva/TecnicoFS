@@ -40,7 +40,7 @@ FILE* openFile(char* name, char* mode) {
 	/* Error check for inputfile */	
 	if (fp == NULL) {	
 		fprintf(stderr, "Error: could not open file\n");
-    	exit(EXIT_FAILURE);
+    	exit(TECNICOFS_ERROR_FILE_NOT_FOUND);
 	}
 	
 	return fp;
