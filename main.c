@@ -20,7 +20,7 @@ char* outputfile = NULL;
 char* inputfile = NULL;
 
 /* Parser for the arguments */
-int argumentParser(int argc, char* argv[]) {
+void argumentParser(int argc, char* argv[]) {
 	/* checks if the number of arguments is correct */
 	if (argc != 5) {
 		fprintf(stderr, "Error: invalid arguments\n");
@@ -31,8 +31,6 @@ int argumentParser(int argc, char* argv[]) {
 	outputfile = argv[2];
 	numberThreads = atoi(argv[3]);
 	/* TODO: add the other arguments */
-	
-	return 0;
 }
 
 /* File opening with NULL checker */
