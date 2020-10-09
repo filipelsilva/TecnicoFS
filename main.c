@@ -19,6 +19,9 @@ int headQueue = 0;
 char* outputfile = NULL;
 char* inputfile = NULL;
 
+/* Syncronization strategy */
+char* syncStrategy = NULL;
+
 /* Parser for the arguments */
 void argumentParser(int argc, char* argv[]) {
 	/* checks if the number of arguments is correct */
@@ -30,7 +33,17 @@ void argumentParser(int argc, char* argv[]) {
 	inputfile = argv[1];
 	outputfile = argv[2];
 	numberThreads = atoi(argv[3]);
-	/* TODO: add the other arguments */
+	syncStrategy = argv[4];
+	
+	if (numberThreads < 1) {
+		fprintf(stderr, "Error: invalid number of threads\n");
+		exit(EXIT_FAILURE);
+	}
+
+	else if (!strcmp(syncStrategy, "nosync") && numberThreads != 1) {
+		fprintf(stderr, "Error: nosync only can be used with one thread\n");
+		exit(EXIT_FAILURE);
+	}
 }
 
 /* File opening with NULL checker */
