@@ -17,8 +17,9 @@ char inputCommands[MAX_COMMANDS][MAX_INPUT_SIZE];
 int numberCommands = 0;
 int headQueue = 0;
 
-pthread_mutex_t function_call;
-pthread_mutex_t global;
+/* Syncronization locks */
+pthread_mutex_t call_vector;
+pthread_mutex_t mutex;
 pthread_rwlock_t rwlock;
 
 /* Filenames for the inputfile and outputfile */
@@ -74,19 +75,19 @@ int insertCommand(char* data) {
 }
 
 char* removeCommand() {
-	if(numberCommands > 0){
+	if(numberCommands > 0) {
         numberCommands--;
         return inputCommands[headQueue++];  
     }
 	return NULL;
 }
 
-void errorParse(){
+void errorParse() {
     fprintf(stderr, "Error: command invalid\n");
     exit(EXIT_FAILURE);
 }
 
-void processInput(FILE *file){
+void processInput(FILE *file) {
     char line[MAX_INPUT_SIZE];
 
     /* break loop with ^Z or ^D */
@@ -132,69 +133,81 @@ void processInput(FILE *file){
     }
 }
 
-
-void lock(char token){
-    if (strcmp(syncStrategy, "mutex") == 0){
-        pthread_mutex_lock(&global);
+/* syncronization lock initializer */
+void init_lock() {
+	pthread_mutex_init(&call_vector, NULL);
+    
+    if (!strcmp(syncStrategy, "mutex")) {
+    	pthread_mutex_init(&mutex, NULL);
     }
 
-    else if (strcmp(syncStrategy, "rwlock") == 0){
-        if (token == 'd' || token == 'c'){
-            pthread_rwlock_wrlock(&rwlock);
-        }
-
-        else if (token == 'l'){
-            pthread_rwlock_rdlock(&rwlock);
-        }
-       
+    else if (!strcmp(syncStrategy, "rwlock")) {
+    	pthread_rwlock_init(&rwlock, NULL);
     }
 }
 
-void unlock(){
-    if (strcmp(syncStrategy, "mutex") == 0){
-        pthread_mutex_unlock(&global);
+/* TecnicoFS content -> syncronization lock enabler */
+void sync_lock(char token) {
+    if (!strcmp(syncStrategy, "mutex")) {
+        pthread_mutex_lock(&mutex);
     }
 
-    else if (strcmp(syncStrategy, "rwlock") == 0){
+    else if (!strcmp(syncStrategy, "rwlock")) {
+        if (token == 'd' || token == 'c') {
+            pthread_rwlock_wrlock(&rwlock);
+        }
+
+        else if (token == 'l') {
+            pthread_rwlock_rdlock(&rwlock);
+        }
+    }
+}
+
+/* TecnicoFS content -> syncronization lock disabler */
+void sync_unlock() {
+    if (!strcmp(syncStrategy, "mutex")) {
+        pthread_mutex_unlock(&mutex);
+    }
+
+    else if (!strcmp(syncStrategy, "rwlock")) {
         pthread_rwlock_unlock(&rwlock);
     }
 }
 
-
-void applyCommands(){
-    pthread_mutex_lock(&function_call);
-    while (numberCommands > 0){
-
+void applyCommands() {
+	/* lock acess to call vector */
+    pthread_mutex_lock(&call_vector);
+    
+    while (numberCommands > 0) {
 		const char* command = removeCommand();
-        if (command == NULL){
-            pthread_mutex_unlock(&function_call);
+        if (command == NULL) {
+            pthread_mutex_unlock(&call_vector);
             continue;
         }
 
         char token, type;
         char name[MAX_INPUT_SIZE];
         int numTokens = sscanf(command, "%c %s %c", &token, name, &type);
-
         if (numTokens < 2) {
             fprintf(stderr, "Error: invalid command in Queue\n");
             exit(EXIT_FAILURE);
         }
-        int searchResult;
-
+    
+    	int searchResult;
         switch (token) {
             case 'c':
                 switch (type) {
                     case 'f':
                         printf("Create file: %s\n", name);
-                        lock(token);
+                        sync_lock(token);
                         create(name, T_FILE);
-                        unlock();
+                        sync_unlock();
                         break;
                     case 'd':
                         printf("Create directory: %s\n", name);
-                        lock(token);
+                        sync_lock(token);
                         create(name, T_DIRECTORY);
-                        unlock();
+                        sync_unlock();
                         break;
                     default:
                         fprintf(stderr, "Error: invalid node type\n");
@@ -203,50 +216,46 @@ void applyCommands(){
                 break;
 
             case 'l': 
-                lock(token);
+                sync_lock(token);
                 searchResult = lookup(name);
                 if (searchResult >= 0)
                     printf("Search: %s found\n", name);
                 else
                     printf("Search: %s not found\n", name);
-
-                unlock();
+                
+                sync_unlock();
                 break;
 
             case 'd':
-                lock(token);
+                sync_lock(token);
                 printf("Delete: %s\n", name);
                 delete(name);
-                unlock();
+                sync_unlock();
                 break;
 
             default: { /* error */
                 fprintf(stderr, "Error: command to apply\n");
                 exit(EXIT_FAILURE);
             }
-
-
         }
     }
-    
-    pthread_mutex_unlock(&function_call);
-    
+    /* unlock the call vector sync lock */
+    pthread_mutex_unlock(&call_vector);
 }
 
+/* wrapper function, calling applyCommands() */
 void* fnThread() {
 	applyCommands();
 	return NULL;
 }
 
+/* process pool initializer and runner */
 void processPool() {
 	int i = 0;
 	pthread_t tid[numberThreads];
-	pthread_mutex_init(&global, NULL);
-    pthread_mutex_init(&function_call, NULL);
-    pthread_rwlock_init(&rwlock, NULL);
    	 
     for (i = 0; i < numberThreads; i++) {
-        if (pthread_create(&tid[i], NULL, fnThread, NULL) != 0){
+        if (pthread_create(&tid[i], NULL, fnThread, NULL) != 0) {
             fprintf(stderr, "Error: could not create threads\n");
             exit(EXIT_FAILURE);
         }
@@ -264,23 +273,15 @@ int main(int argc, char* argv[]) {
     /* init filesystem */
     init_fs();
 	
-	/* parsing arguments */
 	argumentParser(argc, argv);
 
-    /* process input */
     FILE* input = openFile(inputfile, "r");
 	processInput(input);
 	fclose(input);
-   
-	/* pool */
+  	
+  	init_lock();
 	processPool();
 
-	/* A FAZER: TIMER */
-	//clock_t start = clock();
-	//clock_t finish = clock();
-	//double elapsed = (double)(start - finish) / (double)(CLOCKS_PER_SEC);
-	//printf("TecnicoFS completed in %.4f seconds.\n", elapsed);
-	
 	/* print tree */
 	FILE *output = openFile(outputfile, "w");
     print_tecnicofs_tree(output);
