@@ -63,7 +63,6 @@ FILE* openFile(char* name, char* mode) {
 	return fp;
 }
 
-
 int insertCommand(char* data) {
     if(numberCommands != MAX_COMMANDS) {
         strcpy(inputCommands[numberCommands++], data);
@@ -195,7 +194,8 @@ void* fnThread() {
 void processPool() {
 	int i = 0;
 	pthread_t tid[numberThreads];
-    
+	pthread_mutex_init(&mutex, NULL);
+   	 
     for (i = 0; i < numberThreads; i++) {
         if (pthread_create(&tid[i], NULL, fnThread, NULL) != 0){
             fprintf(stderr, "Error: could not create threads\n");
@@ -224,7 +224,6 @@ int main(int argc, char* argv[]) {
 	fclose(input);
    
 	/* pool */
-	pthread_mutex_init(&mutex, NULL);
 	processPool();
 
 	/* A FAZER: TIMER */
