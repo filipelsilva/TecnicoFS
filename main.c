@@ -3,7 +3,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <ctype.h>
-#include <time.h> // CONFIRMAR SE PODEMOS USAR ISTO
+#include <sys/time.h> // CONFIRMAR SE PODEMOS USAR ISTO
 #include <pthread.h>
 #include <unistd.h>
 #include "fs/operations.h"
@@ -28,6 +28,9 @@ char* inputfile = NULL;
 
 /* Syncronization strategy */
 char* syncStrategy = NULL;
+
+/* Timestamps for the elapsed time */
+struct timeval tic, toc;
 
 /* Parser for the arguments */
 void argumentParser(int argc, char* argv[]) {
@@ -260,6 +263,9 @@ void processPool() {
             exit(EXIT_FAILURE);
         }
     }
+	
+	/* Get time after the initialization of the process pool */
+	gettimeofday(&tic, NULL);
 
     for (i = 0; i < numberThreads; i++) {
 		if (numberCommands < 0) {
@@ -267,6 +273,9 @@ void processPool() {
 		}
         pthread_join(tid[i], NULL);
     }
+
+	/* Get time after all has been done */
+	gettimeofday(&toc, NULL);
 }
 
 int main(int argc, char* argv[]) {
@@ -281,7 +290,8 @@ int main(int argc, char* argv[]) {
   	
   	init_lock();
 	processPool();
-
+	
+	printf("TecnicoFS completed in %.4f seconds.\n", (double) (toc.tv_usec - tic.tv_usec) / 1000000 + (double) (toc.tv_sec - tic.tv_sec));     
 	/* print tree */
 	FILE *output = openFile(outputfile, "w");
     print_tecnicofs_tree(output);
