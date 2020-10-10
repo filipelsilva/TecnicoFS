@@ -17,7 +17,8 @@ char inputCommands[MAX_COMMANDS][MAX_INPUT_SIZE];
 int numberCommands = 0;
 int headQueue = 0;
 
-pthread_mutex_t mutex;
+pthread_mutex_t function_call;
+pthread_mutex_t global;
 
 /* Filenames for the inputfile and outputfile */
 char* outputfile = NULL;
@@ -72,11 +73,11 @@ int insertCommand(char* data) {
 }
 
 char* removeCommand() {
-    if(numberCommands > 0){
+	if(numberCommands > 0){
         numberCommands--;
         return inputCommands[headQueue++];  
     }
-    return NULL;
+	return NULL;
 }
 
 void errorParse(){
@@ -131,14 +132,14 @@ void processInput(FILE *file){
 }
 
 void applyCommands(){
+	pthread_mutex_init(&function_call, NULL);
     while (numberCommands > 0){
-        const char* command = removeCommand();
+		pthread_mutex_lock(&function_call);
+		const char* command = removeCommand();
         if (command == NULL){
+            pthread_mutex_unlock(&function_call);
             continue;
         }
-
-    	/* Mutex lock */
-        pthread_mutex_lock(&mutex);
 
         char token, type;
         char name[MAX_INPUT_SIZE];
@@ -148,6 +149,10 @@ void applyCommands(){
             exit(EXIT_FAILURE);
         }
         int searchResult;
+		
+		pthread_mutex_unlock(&function_call);
+		pthread_mutex_lock(&global);
+
         switch (token) {
             case 'c':
                 switch (type) {
@@ -176,14 +181,14 @@ void applyCommands(){
                 delete(name);
                 break;
             default: { /* error */
-            	pthread_mutex_unlock(&mutex);
+            	pthread_mutex_unlock(&global);
                 fprintf(stderr, "Error: command to apply\n");
                 exit(EXIT_FAILURE);
             }
         }
-    	/* Mutex unlock */
-    	pthread_mutex_unlock(&mutex);
+        pthread_mutex_unlock(&global);
     }
+    pthread_mutex_unlock(&function_call);
 }
 
 void* fnThread() {
@@ -194,7 +199,7 @@ void* fnThread() {
 void processPool() {
 	int i = 0;
 	pthread_t tid[numberThreads];
-	pthread_mutex_init(&mutex, NULL);
+	pthread_mutex_init(&global, NULL);
    	 
     for (i = 0; i < numberThreads; i++) {
         if (pthread_create(&tid[i], NULL, fnThread, NULL) != 0){
@@ -204,6 +209,9 @@ void processPool() {
     }
 
     for (i = 0; i < numberThreads; i++) {
+		if (numberCommands < 0) {
+			break;
+		}
         pthread_join(tid[i], NULL);
     }
 }
