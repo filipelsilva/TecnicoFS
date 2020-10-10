@@ -204,10 +204,10 @@ void processPool() {
     }
 
     for (i = 0; i < numberThreads; i++) {
-        if (pthread_join(tid[i], NULL) != 0) {
-            fprintf(stderr, "Error: could not join threads\n"); //VERIFICAR ISTO
-            exit(EXIT_FAILURE);
+        if (numberCommands == 0) {
+        	break;
         }
+        pthread_join(tid[i], NULL);
     }
 }
 
