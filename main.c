@@ -36,6 +36,11 @@ void argumentParser(int argc, char* argv[]) {
 	/* TODO: add the other arguments */
 }
 
+
+void *fnThread(){
+    applyCommands();
+}
+
 /* File opening with NULL checker */
 FILE* openFile(char* name, char* mode) {
 	FILE* fp = fopen(name, mode);
@@ -58,12 +63,12 @@ int insertCommand(char* data) {
 }
 
 char* removeCommand() {
-    pthread_mutex_lock(inputCommands, mutex);
+    // lock
     if(numberCommands > 0){
         numberCommands--;
         return inputCommands[headQueue++];  
     }
-    pthread_mutex_unlock(inputCommands, mutex);
+    // unlock
     return NULL;
 }
 
@@ -176,8 +181,9 @@ int main(int argc, char* argv[]) {
 	/* parsing arguments */
 	argumentParser(argc, argv);
 
-
-    pthread_t tid[N];
+    // vector with threads Sofs
+    pthread_t tid[MAX_COMMANDS];
+    int i = 0;
 
     /* process input */
     FILE* input = openFile(inputfile, "r");
@@ -190,18 +196,23 @@ int main(int argc, char* argv[]) {
 	//double elapsed = (double)(start - finish) / (double)(CLOCKS_PER_SEC);
 	//printf("TecnicoFS completed in %.4f seconds.\n", elapsed);
 	
-    // create  threads 
-    for (i=0; i<N; i++) {
-        args[i] = i;
-        if (pthread_create (&tid[i], NULL, fnThread, &args[i]) != 0){
-        printf("Erro ao criar tarefa.\n");
-        return 1;
+    // create  threads Sofs
+    for (i=0; i<MAX_COMMANDS; i++) {
+        if (pthread_create (&tid[i], NULL, fnThread, NULL) != 0){
+            fprintf(stderr, "Error: could not create threads\n");
+            return EXIT_FAILURE;
         }
-        printf("Lancou uma tarefa\n");
     }
 
+    // applyCommands();
 
-    // join threads 
+    // join threads Sofs
+    for (i=0; i<MAX_COMMANDS; i++) {
+        if (pthread_join (tid[i], NULL) != 0) {
+            fprintf(stderr, "Error: could not join threads\n");
+            return EXIT_FAILURE;
+        }
+    }
 
 	/* print tree */
 	FILE *output = openFile(outputfile, "w");
