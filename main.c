@@ -4,6 +4,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <time.h> // CONFIRMAR SE PODEMOS USAR ISTO
+#include <pthread.h>
 #include "fs/operations.h"
 
 #define MAX_COMMANDS 150000
@@ -14,6 +15,8 @@ int numberThreads = 0;
 char inputCommands[MAX_COMMANDS][MAX_INPUT_SIZE];
 int numberCommands = 0;
 int headQueue = 0;
+
+pthread_mutex_t mutex; // Sofia
 
 /* Filenames for the inputfile and outputfile */
 char* outputfile = NULL;
@@ -55,10 +58,12 @@ int insertCommand(char* data) {
 }
 
 char* removeCommand() {
+    pthread_mutex_lock(inputCommands, mutex);
     if(numberCommands > 0){
         numberCommands--;
         return inputCommands[headQueue++];  
     }
+    pthread_mutex_unlock(inputCommands, mutex);
     return NULL;
 }
 
@@ -171,6 +176,9 @@ int main(int argc, char* argv[]) {
 	/* parsing arguments */
 	argumentParser(argc, argv);
 
+
+    pthread_t tid[N];
+
     /* process input */
     FILE* input = openFile(inputfile, "r");
 	processInput(input);
@@ -182,7 +190,18 @@ int main(int argc, char* argv[]) {
 	//double elapsed = (double)(start - finish) / (double)(CLOCKS_PER_SEC);
 	//printf("TecnicoFS completed in %.4f seconds.\n", elapsed);
 	
-	applyCommands();
+    // create  threads 
+    for (i=0; i<N; i++) {
+        args[i] = i;
+        if (pthread_create (&tid[i], NULL, fnThread, &args[i]) != 0){
+        printf("Erro ao criar tarefa.\n");
+        return 1;
+        }
+        printf("Lancou uma tarefa\n");
+    }
+
+
+    // join threads 
 
 	/* print tree */
 	FILE *output = openFile(outputfile, "w");
