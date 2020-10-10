@@ -132,13 +132,13 @@ void processInput(FILE *file){
 
 void applyCommands(){
     while (numberCommands > 0){
-    	/* Mutex lock */
-        pthread_mutex_lock(&mutex);
-
         const char* command = removeCommand();
         if (command == NULL){
             continue;
         }
+
+    	/* Mutex lock */
+        pthread_mutex_lock(&mutex);
 
         char token, type;
         char name[MAX_INPUT_SIZE];
@@ -204,9 +204,6 @@ void processPool() {
     }
 
     for (i = 0; i < numberThreads; i++) {
-        if (numberCommands < 0) {
-        	break;
-        }
         pthread_join(tid[i], NULL);
     }
 }
