@@ -19,6 +19,7 @@ int headQueue = 0;
 
 pthread_mutex_t function_call;
 pthread_mutex_t global;
+pthread_rwlock_t rwlock;
 
 /* Filenames for the inputfile and outputfile */
 char* outputfile = NULL;
@@ -131,10 +132,39 @@ void processInput(FILE *file){
     }
 }
 
+
+void lock(char token){
+    if (strcmp(syncStrategy, "mutex") == 0){
+        pthread_mutex_lock(&global);
+    }
+
+    else if (strcmp(syncStrategy, "rwlock") == 0){
+        if (token == 'd' || token == 'c'){
+            pthread_rwlock_wrlock(&rwlock);
+        }
+
+        else if (token == 'l'){
+            pthread_rwlock_rdlock(&rwlock);
+        }
+       
+    }
+}
+
+void unlock(){
+    if (strcmp(syncStrategy, "mutex") == 0){
+        pthread_mutex_unlock(&global);
+    }
+
+    else if (strcmp(syncStrategy, "rwlock") == 0){
+        pthread_rwlock_unlock(&rwlock);
+    }
+}
+
+
 void applyCommands(){
-	pthread_mutex_init(&function_call, NULL);
+    pthread_mutex_lock(&function_call);
     while (numberCommands > 0){
-		pthread_mutex_lock(&function_call);
+
 		const char* command = removeCommand();
         if (command == NULL){
             pthread_mutex_unlock(&function_call);
@@ -144,51 +174,63 @@ void applyCommands(){
         char token, type;
         char name[MAX_INPUT_SIZE];
         int numTokens = sscanf(command, "%c %s %c", &token, name, &type);
+
         if (numTokens < 2) {
             fprintf(stderr, "Error: invalid command in Queue\n");
             exit(EXIT_FAILURE);
         }
         int searchResult;
-		
-		pthread_mutex_unlock(&function_call);
-		pthread_mutex_lock(&global);
 
         switch (token) {
             case 'c':
                 switch (type) {
                     case 'f':
                         printf("Create file: %s\n", name);
+                        lock(token);
                         create(name, T_FILE);
+                        unlock();
                         break;
                     case 'd':
                         printf("Create directory: %s\n", name);
+                        lock(token);
                         create(name, T_DIRECTORY);
+                        unlock();
                         break;
                     default:
                         fprintf(stderr, "Error: invalid node type\n");
                         exit(EXIT_FAILURE);
                 }
                 break;
+
             case 'l': 
+                lock(token);
                 searchResult = lookup(name);
                 if (searchResult >= 0)
                     printf("Search: %s found\n", name);
                 else
                     printf("Search: %s not found\n", name);
+
+                unlock();
                 break;
+
             case 'd':
+                lock(token);
                 printf("Delete: %s\n", name);
                 delete(name);
+                unlock();
                 break;
+
             default: { /* error */
-            	pthread_mutex_unlock(&global);
                 fprintf(stderr, "Error: command to apply\n");
                 exit(EXIT_FAILURE);
             }
+
+
         }
-        pthread_mutex_unlock(&global);
     }
+    
     pthread_mutex_unlock(&function_call);
+    
 }
 
 void* fnThread() {
@@ -200,6 +242,8 @@ void processPool() {
 	int i = 0;
 	pthread_t tid[numberThreads];
 	pthread_mutex_init(&global, NULL);
+    pthread_mutex_init(&function_call, NULL);
+    pthread_rwlock_init(&rwlock, NULL);
    	 
     for (i = 0; i < numberThreads; i++) {
         if (pthread_create(&tid[i], NULL, fnThread, NULL) != 0){
