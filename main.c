@@ -204,7 +204,7 @@ void processPool() {
     }
 
     for (i = 0; i < numberThreads; i++) {
-        if (numberCommands == 0) {
+        if (numberCommands < 0) {
         	break;
         }
         pthread_join(tid[i], NULL);
