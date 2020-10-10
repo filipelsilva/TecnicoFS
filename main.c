@@ -179,12 +179,17 @@ void sync_unlock() {
 
 void applyCommands() {
 	/* lock acess to call vector */
-    pthread_mutex_lock(&call_vector);
-    
-    while (numberCommands > 0) {
+    //pthread_mutex_lock(&call_vector);
+   
+   	while (numberCommands > 0) {
+		/* lock acess to call vector */
+    	pthread_mutex_lock(&call_vector);
+		
 		const char* command = removeCommand();
-        if (command == NULL) {
-            pthread_mutex_unlock(&call_vector);
+
+    	/* unlock the call vector sync lock */
+		pthread_mutex_unlock(&call_vector);
+		if (command == NULL) {
             continue;
         }
 
@@ -242,8 +247,8 @@ void applyCommands() {
             }
         }
     }
-    /* unlock the call vector sync lock */
-    pthread_mutex_unlock(&call_vector);
+    //pthread_mutex_unlock(&call_vector);
+	//pthread_mutex_unlock(&call_vector);
 }
 
 /* wrapper function, calling applyCommands() */
