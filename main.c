@@ -183,6 +183,7 @@ void applyCommands() {
 
     	/* unlock acess to call vector */
 		pthread_mutex_unlock(&call_vector);
+		
 		if (command == NULL) {
             continue;
         }
