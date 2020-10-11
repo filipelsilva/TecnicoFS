@@ -32,7 +32,6 @@ char* syncStrategy = NULL;
 /* Timestamps for the elapsed time */
 struct timeval tic, toc;
 
-/* Parser for the arguments */
 void argumentParser(int argc, char* argv[]) {
 	if (argc != 5) {
 		fprintf(stderr, "Error: invalid arguments\n");
@@ -288,6 +287,7 @@ int main(int argc, char* argv[]) {
 	
 	argumentParser(argc, argv);
 
+	/* process input */
     FILE* input = openFile(inputfile, "r");
 	processInput(input);
 	fclose(input);
@@ -296,6 +296,7 @@ int main(int argc, char* argv[]) {
 	processPool();
 	
 	print_elapsed_time();
+
 	/* print tree */
 	FILE *output = openFile(outputfile, "w");
     print_tecnicofs_tree(output);
