@@ -135,7 +135,7 @@ void processInput(FILE *file) {
 }
 
 /* syncronization lock initializer */
-void init_lock() {
+void sync_locks_init() {
 	pthread_mutex_init(&call_vector, NULL);
     
     if (!strcmp(syncStrategy, "mutex")) {
@@ -148,7 +148,7 @@ void init_lock() {
 }
 
 /* TecnicoFS content -> syncronization lock enabler */
-void sync_lock(char token) {
+void fs_lock(char token) {
     if (!strcmp(syncStrategy, "mutex")) {
         pthread_mutex_lock(&mutex);
     }
@@ -165,7 +165,7 @@ void sync_lock(char token) {
 }
 
 /* TecnicoFS content -> syncronization lock disabler */
-void sync_unlock() {
+void fs_unlock() {
     if (!strcmp(syncStrategy, "mutex")) {
         pthread_mutex_unlock(&mutex);
     }
@@ -202,15 +202,15 @@ void applyCommands() {
                 switch (type) {
                     case 'f':
                         printf("Create file: %s\n", name);
-                        sync_lock(token);
+                        fs_lock(token);
                         create(name, T_FILE);
-                        sync_unlock();
+                        fs_unlock();
                         break;
                     case 'd':
                         printf("Create directory: %s\n", name);
-                        sync_lock(token);
+                        fs_lock(token);
                         create(name, T_DIRECTORY);
-                        sync_unlock();
+                        fs_unlock();
                         break;
                     default:
                         fprintf(stderr, "Error: invalid node type\n");
@@ -219,21 +219,21 @@ void applyCommands() {
                 break;
 
             case 'l': 
-                sync_lock(token);
+                fs_lock(token);
                 searchResult = lookup(name);
                 if (searchResult >= 0)
                     printf("Search: %s found\n", name);
                 else
                     printf("Search: %s not found\n", name);
                 
-                sync_unlock();
+                fs_unlock();
                 break;
 
             case 'd':
-                sync_lock(token);
+                fs_lock(token);
                 printf("Delete: %s\n", name);
                 delete(name);
-                sync_unlock();
+                fs_unlock();
                 break;
 
             default: { /* error */
@@ -292,7 +292,7 @@ int main(int argc, char* argv[]) {
 	processInput(input);
 	fclose(input);
   	
-  	init_lock();
+  	sync_locks_init();
 	processPool();
 	
 	print_elapsed_time();
