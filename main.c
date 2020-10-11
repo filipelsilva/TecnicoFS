@@ -34,7 +34,6 @@ struct timeval tic, toc;
 
 /* Parser for the arguments */
 void argumentParser(int argc, char* argv[]) {
-	/* checks if the number of arguments is correct */
 	if (argc != 5) {
 		fprintf(stderr, "Error: invalid arguments\n");
 		exit(EXIT_FAILURE);
@@ -60,7 +59,6 @@ void argumentParser(int argc, char* argv[]) {
 FILE* openFile(char* name, char* mode) {
 	FILE* fp = fopen(name, mode);
 	
-	/* Error check for inputfile */	
 	if (fp == NULL) {	
 		fprintf(stderr, "Error: could not open file\n");
     	exit(TECNICOFS_ERROR_FILE_NOT_FOUND);
@@ -178,16 +176,13 @@ void sync_unlock() {
 }
 
 void applyCommands() {
-	/* lock acess to call vector */
-    //pthread_mutex_lock(&call_vector);
-   
    	while (numberCommands > 0) {
 		/* lock acess to call vector */
     	pthread_mutex_lock(&call_vector);
 		
 		const char* command = removeCommand();
 
-    	/* unlock the call vector sync lock */
+    	/* unlock acess to call vector */
 		pthread_mutex_unlock(&call_vector);
 		if (command == NULL) {
             continue;
@@ -247,11 +242,9 @@ void applyCommands() {
             }
         }
     }
-    //pthread_mutex_unlock(&call_vector);
-	//pthread_mutex_unlock(&call_vector);
 }
 
-/* wrapper function, calling applyCommands() */
+/* wrapper function, calling applyCommands */
 void* fnThread() {
 	applyCommands();
 	return NULL;
@@ -283,6 +276,12 @@ void processPool() {
 	gettimeofday(&toc, NULL);
 }
 
+void print_elapsed_time() {
+	printf("TecnicoFS completed in %.4f seconds.\n",\
+			(double) (toc.tv_usec - tic.tv_usec) / \
+			1000000 + (double) (toc.tv_sec - tic.tv_sec));
+}
+
 int main(int argc, char* argv[]) {
     /* init filesystem */
     init_fs();
@@ -296,7 +295,7 @@ int main(int argc, char* argv[]) {
   	init_lock();
 	processPool();
 	
-	printf("TecnicoFS completed in %.4f seconds.\n", (double) (toc.tv_usec - tic.tv_usec) / 1000000 + (double) (toc.tv_sec - tic.tv_sec));     
+	print_elapsed_time();
 	/* print tree */
 	FILE *output = openFile(outputfile, "w");
     print_tecnicofs_tree(output);
