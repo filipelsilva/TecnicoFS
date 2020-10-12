@@ -1,6 +1,7 @@
 *.zip
 *.o
 *.swp
+*.out
 *.orig
 tecnicofs
 inputfile
