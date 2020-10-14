@@ -201,14 +201,14 @@ void applyCommands() {
             case 'c':
                 switch (type) {
                     case 'f':
-                        printf("Create file: %s\n", name);
                         fs_lock(token);
+                        printf("Create file: %s\n", name);
                         create(name, T_FILE);
                         fs_unlock();
                         break;
                     case 'd':
-                        printf("Create directory: %s\n", name);
                         fs_lock(token);
+                        printf("Create directory: %s\n", name);
                         create(name, T_DIRECTORY);
                         fs_unlock();
                         break;
