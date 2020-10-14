@@ -256,7 +256,7 @@ void processPool() {
 	pthread_t tid[numberThreads];
    	 
     for (i = 0; i < numberThreads; i++) {
-        if (pthread_create(&tid[i], NULL, fnThread, NULL) != 0) {
+        if (pthread_create(&tid[i], NULL, fnThread, NULL)) {
             fprintf(stderr, "Error: could not create threads\n");
             exit(EXIT_FAILURE);
         }
@@ -266,10 +266,9 @@ void processPool() {
 	gettimeofday(&tic, NULL);
 
     for (i = 0; i < numberThreads; i++) {
-		if (numberCommands < 0) {
-			break;
+		if (pthread_join(tid[i], NULL)) {
+			fprintf(stderr, "Error: could not join thread\n");
 		}
-        pthread_join(tid[i], NULL);
     }
 
 	/* Get time after all has been done */
