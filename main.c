@@ -52,6 +52,12 @@ void argumentParser(int argc, char* argv[]) {
 		fprintf(stderr, "Error: nosync only can be used with one thread\n");
 		exit(EXIT_FAILURE);
 	}
+
+	else if (strcmp(syncStrategy, "nosync") &&\
+			strcmp(syncStrategy, "mutex") && strcmp(syncStrategy, "rwlock")) {
+		fprintf(stderr, "Error: invalid SyncStrategy\n");
+		exit(EXIT_FAILURE);
+	}
 }
 
 /* File opening with NULL checker */
