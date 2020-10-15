@@ -59,7 +59,7 @@ FILE* openFile(char* name, char* mode) {
 	FILE* fp = fopen(name, mode);
 	
 	if (fp == NULL) {	
-		fprintf(stderr, "Error: could not open file\n");
+		fprintf(stderr, "Error: Error: could not open file\n");
     	exit(TECNICOFS_ERROR_FILE_NOT_FOUND);
 	}
 	
@@ -135,30 +135,42 @@ void processInput(FILE *file) {
 
 /* syncronization lock initializer */
 void sync_locks_init() {
-	pthread_mutex_init(&call_vector, NULL);
+	if (pthread_mutex_init(&call_vector, NULL)) {
+        fprintf(stderr, "Error: could not initialize mutex: call_vector\n");
+    }
     
     if (!strcmp(syncStrategy, "mutex")) {
-    	pthread_mutex_init(&mutex, NULL);
+        if (pthread_mutex_init(&mutex, NULL)) {
+            fprintf(stderr, "Error: could not initialize mutex: mutex\n");
+        }
     }
 
     else if (!strcmp(syncStrategy, "rwlock")) {
-    	pthread_rwlock_init(&rwlock, NULL);
+    	if (pthread_rwlock_init(&rwlock, NULL)) {
+            fprintf(stderr, "Error: could not initialize rwlock\n");
+        }
     }
 }
 
 /* TecnicoFS content -> syncronization lock enabler */
 void fs_lock(char token) {
     if (!strcmp(syncStrategy, "mutex")) {
-        pthread_mutex_lock(&mutex);
+        if (pthread_mutex_lock(&mutex)) {
+            fprintf(stderr, "Error: could not lock mutex: mutex\n");
+        }
     }
 
     else if (!strcmp(syncStrategy, "rwlock")) {
         if (token == 'd' || token == 'c') {
-            pthread_rwlock_wrlock(&rwlock);
+            if (pthread_rwlock_wrlock(&rwlock)) {
+                fprintf(stderr, "Error: could not lock rwlock (write)\n");
+            }
         }
 
         else if (token == 'l') {
-            pthread_rwlock_rdlock(&rwlock);
+            if (pthread_rwlock_rdlock(&rwlock)) {
+                fprintf(stderr, "Error: could not lock rwlock (read-only)\n");
+            }
         }
     }
 }
@@ -166,23 +178,31 @@ void fs_lock(char token) {
 /* TecnicoFS content -> syncronization lock disabler */
 void fs_unlock() {
     if (!strcmp(syncStrategy, "mutex")) {
-        pthread_mutex_unlock(&mutex);
+        if (pthread_mutex_unlock(&mutex)) {
+            fprintf(stderr, "Error: could not unlock mutex: mutex\n");
+        }
     }
 
     else if (!strcmp(syncStrategy, "rwlock")) {
-        pthread_rwlock_unlock(&rwlock);
+        if (pthread_rwlock_unlock(&rwlock)) {
+            fprintf(stderr, "Error: could not unlock rwlock\n");
+        }
     }
 }
 
 void applyCommands() {
    	while (numberCommands > 0) {
 		/* lock acess to call vector */
-    	pthread_mutex_lock(&call_vector);
+    	if (pthread_mutex_lock(&call_vector)) {
+            fprintf(stderr, "Error: could not lock mutex: call_vector\n");
+        }
 		
 		const char* command = removeCommand();
 
     	/* unlock acess to call vector */
-		pthread_mutex_unlock(&call_vector);
+		if (pthread_mutex_unlock(&call_vector)) {
+            fprintf(stderr, "Error: could not unlock mutex: call_vector\n");
+        }
 		
 		if (command == NULL) {
             continue;
@@ -257,7 +277,7 @@ void processPool() {
    	 
     for (i = 0; i < numberThreads; i++) {
         if (pthread_create(&tid[i], NULL, fnThread, NULL)) {
-            fprintf(stderr, "Error: could not create threads\n");
+            fprintf(stderr, "Error: Error: could not create threads\n");
             exit(EXIT_FAILURE);
         }
     }
@@ -267,7 +287,7 @@ void processPool() {
 
     for (i = 0; i < numberThreads; i++) {
 		if (pthread_join(tid[i], NULL)) {
-			fprintf(stderr, "Error: could not join thread\n");
+			fprintf(stderr, "Error: Error: could not join thread\n");
 		}
     }
 
