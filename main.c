@@ -141,10 +141,12 @@ void processInput(FILE *file) {
 
 /* syncronization lock initializer */
 void sync_locks_init() {
-	if (pthread_mutex_init(&call_vector, NULL)) {
-        fprintf(stderr, "Error: could not initialize mutex: call_vector\n");
-    }
-    
+	if (strcmp(syncStrategy, "nosync")) {
+		if (pthread_mutex_init(&call_vector, NULL)) {
+        	fprintf(stderr, "Error: could not initialize mutex: call_vector\n");
+    	}
+	}
+
     if (!strcmp(syncStrategy, "mutex")) {
         if (pthread_mutex_init(&mutex, NULL)) {
             fprintf(stderr, "Error: could not initialize mutex: mutex\n");
@@ -196,20 +198,34 @@ void fs_unlock() {
     }
 }
 
+/* Call vector -> syncronization lock enabler */
+void call_vector_lock() {
+    if (strcmp(syncStrategy, "nosync")) {
+		if (pthread_mutex_lock(&call_vector)) {
+			fprintf(stderr, "Error: could not lock mutex: call_vector\n");
+        }
+	}
+}
+
+/* Call vector -> syncronization lock disabler */
+void call_vector_unlock() {
+    if (strcmp(syncStrategy, "nosync")) {
+		if (pthread_mutex_unlock(&call_vector)) {
+			fprintf(stderr, "Error: could not unlock mutex: call_vector\n");
+        }
+	}
+}
+
 void applyCommands() {
    	while (numberCommands > 0) {
 		/* lock acess to call vector */
-    	if (pthread_mutex_lock(&call_vector)) {
-            fprintf(stderr, "Error: could not lock mutex: call_vector\n");
-        }
-		
+		call_vector_lock();
+
 		const char* command = removeCommand();
 
     	/* unlock acess to call vector */
-		if (pthread_mutex_unlock(&call_vector)) {
-            fprintf(stderr, "Error: could not unlock mutex: call_vector\n");
-        }
-		
+		call_vector_unlock();
+
 		if (command == NULL) {
             continue;
         }
@@ -327,7 +343,7 @@ int main(int argc, char* argv[]) {
 	FILE *output = openFile(outputfile, "w");
     print_tecnicofs_tree(output);
 	fclose(output);
-
+	
     /* release allocated memory */
     destroy_fs();
     exit(EXIT_SUCCESS);
