@@ -283,7 +283,7 @@ void processPool() {
    	 
     for (i = 0; i < numberThreads; i++) {
         if (pthread_create(&tid[i], NULL, fnThread, NULL)) {
-            fprintf(stderr, "Error: Error: could not create threads\n");
+            fprintf(stderr, "Error: could not create threads\n");
             exit(EXIT_FAILURE);
         }
     }
@@ -293,7 +293,7 @@ void processPool() {
 
     for (i = 0; i < numberThreads; i++) {
 		if (pthread_join(tid[i], NULL)) {
-			fprintf(stderr, "Error: Error: could not join thread\n");
+			fprintf(stderr, "Error: could not join thread\n");
 		}
     }
 
