@@ -3,7 +3,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <ctype.h>
-#include <sys/time.h> // CONFIRMAR SE PODEMOS USAR ISTO
+#include <sys/time.h> 
 #include <pthread.h>
 #include <unistd.h>
 #include "fs/operations.h"
