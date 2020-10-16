@@ -160,6 +160,27 @@ void sync_locks_init() {
     }
 }
 
+/* syncronization lock destroyer */
+void sync_locks_destroy() {
+	if (strcmp(syncStrategy, "nosync")) {
+		if (pthread_mutex_destroy(&call_vector)) {
+        	fprintf(stderr, "Error: could not destroy mutex: call_vector\n");
+    	}
+	}
+
+    if (!strcmp(syncStrategy, "mutex")) {
+        if (pthread_mutex_destroy(&mutex)) {
+            fprintf(stderr, "Error: could not destroy mutex: mutex\n");
+        }
+    }
+
+    else if (!strcmp(syncStrategy, "rwlock")) {
+    	if (pthread_rwlock_destroy(&rwlock)) {
+            fprintf(stderr, "Error: could not destroy rwlock\n");
+        }
+    }
+}
+
 /* TecnicoFS content -> syncronization lock enabler */
 void fs_lock(char token) {
     if (!strcmp(syncStrategy, "mutex")) {
@@ -217,73 +238,81 @@ void call_vector_unlock() {
 }
 
 void applyCommands() {
-   	while (numberCommands > 0) {
+   	while (1) {
 		/* lock acess to call vector */
 		call_vector_lock();
+		
+		if (numberCommands > 0) {
 
-		const char* command = removeCommand();
+			const char* command = removeCommand();
 
-    	/* unlock acess to call vector */
-		call_vector_unlock();
+			/* unlock acess to call vector */
+			call_vector_unlock();
 
-		if (command == NULL) {
-            continue;
-        }
+			if (command == NULL) {
+				continue;
+			}
 
-        char token, type;
-        char name[MAX_INPUT_SIZE];
-        int numTokens = sscanf(command, "%c %s %c", &token, name, &type);
-        if (numTokens < 2) {
-            fprintf(stderr, "Error: invalid command in Queue\n");
-            exit(EXIT_FAILURE);
-        }
-    
-    	int searchResult;
-        switch (token) {
-            case 'c':
-                switch (type) {
-                    case 'f':
-                        fs_lock(token);
-                        printf("Create file: %s\n", name);
-                        create(name, T_FILE);
-                        fs_unlock();
-                        break;
-                    case 'd':
-                        fs_lock(token);
-                        printf("Create directory: %s\n", name);
-                        create(name, T_DIRECTORY);
-                        fs_unlock();
-                        break;
-                    default:
-                        fprintf(stderr, "Error: invalid node type\n");
-                        exit(EXIT_FAILURE);
-                }
-                break;
+			char token, type;
+			char name[MAX_INPUT_SIZE];
+			int numTokens = sscanf(command, "%c %s %c", &token, name, &type);
+			if (numTokens < 2) {
+				fprintf(stderr, "Error: invalid command in Queue\n");
+				exit(EXIT_FAILURE);
+			}
 
-            case 'l': 
-                fs_lock(token);
-                searchResult = lookup(name);
-                if (searchResult >= 0)
-                    printf("Search: %s found\n", name);
-                else
-                    printf("Search: %s not found\n", name);
-                
-                fs_unlock();
-                break;
+			int searchResult;
+			switch (token) {
+				case 'c':
+					switch (type) {
+						case 'f':
+							fs_lock(token);
+							printf("Create file: %s\n", name);
+							create(name, T_FILE);
+							fs_unlock();
+							break;
+						case 'd':
+							fs_lock(token);
+							printf("Create directory: %s\n", name);
+							create(name, T_DIRECTORY);
+							fs_unlock();
+							break;
+						default:
+							fprintf(stderr, "Error: invalid node type\n");
+							exit(EXIT_FAILURE);
+					}
+					break;
 
-            case 'd':
-                fs_lock(token);
-                printf("Delete: %s\n", name);
-                delete(name);
-                fs_unlock();
-                break;
+				case 'l': 
+					fs_lock(token);
+					searchResult = lookup(name);
+					if (searchResult >= 0)
+						printf("Search: %s found\n", name);
+					else
+						printf("Search: %s not found\n", name);
 
-            default: { /* error */
-                fprintf(stderr, "Error: command to apply\n");
-                exit(EXIT_FAILURE);
-            }
-        }
-    }
+					fs_unlock();
+					break;
+
+				case 'd':
+					fs_lock(token);
+					printf("Delete: %s\n", name);
+					delete(name);
+					fs_unlock();
+					break;
+
+				default: { /* error */
+					fprintf(stderr, "Error: command to apply\n");
+					exit(EXIT_FAILURE);
+				}
+			} 
+    	}
+
+		else {
+			call_vector_unlock();
+			break;
+		}
+	}
 }
 
 /* wrapper function, calling applyCommands */
@@ -336,6 +365,7 @@ int main(int argc, char* argv[]) {
   	
   	sync_locks_init();
 	processPool();
+	sync_locks_destroy();
 	
 	print_elapsed_time();
 
