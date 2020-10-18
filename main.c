@@ -18,9 +18,11 @@ int numberCommands = 0;
 int headQueue = 0;
 
 /* Syncronization locks */
+/*
 pthread_mutex_t call_vector;
 pthread_mutex_t mutex;
 pthread_rwlock_t rwlock;
+*/
 
 /* Filenames for the inputfile and outputfile */
 char* outputfile = NULL;
@@ -33,7 +35,7 @@ char* syncStrategy = NULL;
 struct timeval tic, toc;
 
 void argumentParser(int argc, char* argv[]) {
-	if (argc != 5) {
+	if (argc != 4) {
 		fprintf(stderr, "Error: invalid arguments\n");
 		exit(EXIT_FAILURE);
 	}
@@ -41,21 +43,9 @@ void argumentParser(int argc, char* argv[]) {
 	inputfile = argv[1];
 	outputfile = argv[2];
 	numberThreads = atoi(argv[3]);
-	syncStrategy = argv[4];
 	
 	if (numberThreads < 1) {
 		fprintf(stderr, "Error: invalid number of threads\n");
-		exit(EXIT_FAILURE);
-	}
-
-	else if (!strcmp(syncStrategy, "nosync") && numberThreads != 1) {
-		fprintf(stderr, "Error: nosync only can be used with one thread\n");
-		exit(EXIT_FAILURE);
-	}
-
-	else if (strcmp(syncStrategy, "nosync") &&\
-			strcmp(syncStrategy, "mutex") && strcmp(syncStrategy, "rwlock")) {
-		fprintf(stderr, "Error: invalid SyncStrategy\n");
 		exit(EXIT_FAILURE);
 	}
 }
@@ -143,6 +133,7 @@ void processInput(FILE *file) {
 }
 
 /* syncronization lock initializer */
+/*
 void sync_locks_init() {
 	if (pthread_mutex_init(&call_vector, NULL)) {
 		fprintf(stderr, "Error: could not initialize mutex: call_vector\n");
@@ -160,8 +151,11 @@ void sync_locks_init() {
         }
     }
 }
+*/
 
 /* syncronization lock destroyer */
+
+/*
 void sync_locks_destroy() {
 	if (pthread_mutex_destroy(&call_vector)) {
 		fprintf(stderr, "Error: could not destroy mutex: call_vector\n");
@@ -178,9 +172,10 @@ void sync_locks_destroy() {
             fprintf(stderr, "Error: could not destroy rwlock\n");
         }
     }
-}
+}*/
 
 /* TecnicoFS content -> syncronization lock enabler */
+/*
 void fs_lock(char token) {
     if (!strcmp(syncStrategy, "mutex")) {
         if (pthread_mutex_lock(&mutex)) {
@@ -202,8 +197,10 @@ void fs_lock(char token) {
         }
     }
 }
+*/
 
 /* TecnicoFS content -> syncronization lock disabler */
+/*
 void fs_unlock() {
     if (!strcmp(syncStrategy, "mutex")) {
         if (pthread_mutex_unlock(&mutex)) {
@@ -217,32 +214,37 @@ void fs_unlock() {
         }
     }
 }
+*/
 
 /* Call vector -> syncronization lock enabler */
+/*
 void call_vector_lock() {
 	if (pthread_mutex_lock(&call_vector)) {
 		fprintf(stderr, "Error: could not lock mutex: call_vector\n");
 	}
 }
+*/
 
 /* Call vector -> syncronization lock disabler */
+/*
 void call_vector_unlock() {
 	if (pthread_mutex_unlock(&call_vector)) {
 		fprintf(stderr, "Error: could not unlock mutex: call_vector\n");
 	}
 }
+*/
 
 void applyCommands() {
    	while (1) {
 		/* lock acess to call vector */
-		call_vector_lock();
+		// call_vector_lock();
 		
 		if (numberCommands > 0) {
 
 			const char* command = removeCommand();
 
 			/* unlock acess to call vector */
-			call_vector_unlock();
+			// call_vector_unlock();
 
 			if (command == NULL) {
 				continue;
@@ -261,16 +263,16 @@ void applyCommands() {
 				case 'c':
 					switch (type) {
 						case 'f':
-							fs_lock(token);
+							// fs_lock(token);
 							printf("Create file: %s\n", name);
 							create(name, T_FILE);
-							fs_unlock();
+							// fs_unlock();
 							break;
 						case 'd':
-							fs_lock(token);
+							// fs_lock(token);
 							printf("Create directory: %s\n", name);
 							create(name, T_DIRECTORY);
-							fs_unlock();
+							// fs_unlock();
 							break;
 						default:
 							fprintf(stderr, "Error: invalid node type\n");
@@ -279,21 +281,21 @@ void applyCommands() {
 					break;
 
 				case 'l': 
-					fs_lock(token);
+					//fs_lock(token);
 					searchResult = lookup(name);
 					if (searchResult >= 0)
 						printf("Search: %s found\n", name);
 					else
 						printf("Search: %s not found\n", name);
 
-					fs_unlock();
+					//fs_unlock();
 					break;
 
 				case 'd':
-					fs_lock(token);
+					//fs_lock(token);
 					printf("Delete: %s\n", name);
 					delete(name);
-					fs_unlock();
+					//fs_unlock();
 					break;
 
 				default: { /* error */
@@ -304,7 +306,7 @@ void applyCommands() {
     	}
 
 		else {
-			call_vector_unlock();
+			//call_vector_unlock();
 			break;
 		}
 	}
@@ -356,9 +358,9 @@ int main(int argc, char* argv[]) {
 	processInput(input);
 	fclose(input);
   	
-  	sync_locks_init();
+  	//sync_locks_init();
 	processPool();
-	sync_locks_destroy();
+	//sync_locks_destroy();
 	
 	print_elapsed_time();
 
