@@ -96,6 +96,9 @@ void errorParse() {
 void processInput(FILE *file) {
     char line[MAX_INPUT_SIZE];
 
+	/* Get time after the initialization of the process input */
+	gettimeofday(&tic, NULL);
+
     /* break loop with ^Z or ^D */
     while (fgets(line, sizeof(line)/sizeof(char), file)) {
         char token, type;
@@ -325,8 +328,6 @@ void processPool() {
         }
     }
 	
-	/* Get time after the initialization of the process pool */
-	gettimeofday(&tic, NULL);
 
     for (i = 0; i < numberThreads; i++) {
 		if (pthread_join(tid[i], NULL)) {
