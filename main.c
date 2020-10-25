@@ -18,8 +18,9 @@ int numberCommands = 0;
 int headQueue = 0;
 
 /* Syncronization locks */
-/*
+
 pthread_mutex_t call_vector;
+/*
 pthread_mutex_t mutex;
 pthread_rwlock_t rwlock;
 */
@@ -217,34 +218,34 @@ void fs_unlock() {
 */
 
 /* Call vector -> syncronization lock enabler */
-/*
+
 void call_vector_lock() {
 	if (pthread_mutex_lock(&call_vector)) {
 		fprintf(stderr, "Error: could not lock mutex: call_vector\n");
 	}
 }
-*/
+
 
 /* Call vector -> syncronization lock disabler */
-/*
+
 void call_vector_unlock() {
 	if (pthread_mutex_unlock(&call_vector)) {
 		fprintf(stderr, "Error: could not unlock mutex: call_vector\n");
 	}
 }
-*/
+
 
 void applyCommands() {
    	while (1) {
 		/* lock acess to call vector */
-		// call_vector_lock();
+		call_vector_lock();
 		
 		if (numberCommands > 0) {
 
 			const char* command = removeCommand();
 
 			/* unlock acess to call vector */
-			// call_vector_unlock();
+			call_vector_unlock();
 
 			if (command == NULL) {
 				continue;
@@ -306,7 +307,7 @@ void applyCommands() {
     	}
 
 		else {
-			//call_vector_unlock();
+			call_vector_unlock();
 			break;
 		}
 	}
@@ -357,10 +358,16 @@ int main(int argc, char* argv[]) {
     FILE* input = openFile(inputfile, "r");
 	processInput(input);
 	fclose(input);
-  	
+	
+	if (pthread_mutex_init(&call_vector, NULL)) {
+		fprintf(stderr, "Error: could not initialize mutex: call_vector\n");
+	}
   	//sync_locks_init();
 	processPool();
 	//sync_locks_destroy();
+	if (pthread_mutex_destroy(&call_vector)) {
+		fprintf(stderr, "Error: could not destroy mutex: call_vector\n");
+	}
 	
 	print_elapsed_time();
 
