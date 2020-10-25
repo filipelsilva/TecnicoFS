@@ -22,7 +22,6 @@ int headQueue = 0;
 pthread_mutex_t call_vector;
 /*
 pthread_mutex_t mutex;
-pthread_rwlock_t rwlock;
 */
 
 /* Filenames for the inputfile and outputfile */
