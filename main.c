@@ -3,7 +3,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <ctype.h>
-#include <sys/time.h> 
+#include <sys/time.h>
 #include <pthread.h>
 #include <unistd.h>
 #include "fs/operations.h"
@@ -17,19 +17,12 @@ char inputCommands[MAX_COMMANDS][MAX_INPUT_SIZE];
 int numberCommands = 0;
 int headQueue = 0;
 
-/* Syncronization locks */
-
+/* Syncronization lock */
 pthread_mutex_t call_vector;
-/*
-pthread_mutex_t mutex;
-*/
 
 /* Filenames for the inputfile and outputfile */
 char* outputfile = NULL;
 char* inputfile = NULL;
-
-/* Syncronization strategy */
-char* syncStrategy = NULL;
 
 /* Timestamps for the elapsed time */
 struct timeval tic, toc;

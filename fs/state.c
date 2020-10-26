@@ -2,11 +2,35 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <pthread.h>
 #include "state.h"
 #include "../tecnicofs-api-constants.h"
 
 inode_t inode_table[INODE_TABLE_SIZE];
 
+void inode_lock_enable(int inumber, char mode) {
+	switch (mode) {
+		case 'r':
+			if (pthread_rwlock_rdlock(&inode_table[inumber].rwlock)) {
+				fprintf(stderr, "Error: could not lock rwlock (read-only)\n");
+			}
+			break;
+		
+		case 'w':
+			if (pthread_rwlock_wrlock(&inode_table[inumber].rwlock)) {
+				fprintf(stderr, "Error: could not lock rwlock (write)\n");
+			}
+			break;
+		
+		default: break;
+	}
+}
+
+void inode_lock_disable(int inumber) {
+	if (pthread_rwlock_unlock(&inode_table[inumber].rwlock)) {
+		fprintf(stderr, "Error: could not unlock rwlock\n");
+	}
+}
 
 /*
  * Sleeps for synchronization testing.
@@ -24,7 +48,10 @@ void inode_table_init() {
         inode_table[i].nodeType = T_NONE;
         inode_table[i].data.dirEntries = NULL;
         inode_table[i].data.fileContents = NULL;
-    }
+		if (pthread_rwlock_init(&inode_table[i].rwlock, NULL)) {
+			fprintf(stderr, "Error: could not initialize mutex: call_vector\n");
+		}
+	}
 }
 
 /*
@@ -36,9 +63,12 @@ void inode_table_destroy() {
         if (inode_table[i].nodeType != T_NONE) {
             /* as data is an union, the same pointer is used for both dirEntries and fileContents */
             /* just release one of them */
-	  if (inode_table[i].data.dirEntries)
-            free(inode_table[i].data.dirEntries);
-        }
+			if (inode_table[i].data.dirEntries)
+				free(inode_table[i].data.dirEntries);
+			if (pthread_rwlock_destroy(&inode_table[i].rwlock)) {
+				fprintf(stderr, "Error: could not destroy rwlock\n");
+			}
+		}
     }
 }
 
