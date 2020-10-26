@@ -20,8 +20,9 @@ fi
 
 # Run the program
 if [ -d $outputdir ]; then
-	for file in $inputdir/*.txt; do #`ls -p $inputdir | grep -v /`; do
-		file=${file#"${inputdir}/"}
+	for file in `ls -p $inputdir | grep -v /`; do
+	#for file in $inputdir/*.txt; do 
+		#file=${file#"${inputdir}/"}
 		for (( numthreads=1; numthreads<=$maxthreads; numthreads++ )); do
 			echo "InputFile=$file NumThreads=$numthreads"
 			./tecnicofs "$inputdir/$file" "$outputdir/${file%.*}-$numthreads.txt" $numthreads mutex | grep "$filter"
