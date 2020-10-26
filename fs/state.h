@@ -43,7 +43,8 @@ typedef struct inode_t {
     pthread_rwlock_t rwlock;
 } inode_t;
 
-
+void inode_lock_enable(int inumber, char mode);
+void inode_lock_disable(int inumber);
 void insert_delay(int cycles);
 void inode_table_init();
 void inode_table_destroy();
