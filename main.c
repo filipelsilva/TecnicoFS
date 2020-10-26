@@ -3,7 +3,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <ctype.h>
-#include <sys/time.h> 
+#include <sys/time.h>
 #include <pthread.h>
 #include <unistd.h>
 #include "fs/operations.h"
@@ -17,23 +17,18 @@ char inputCommands[MAX_COMMANDS][MAX_INPUT_SIZE];
 int numberCommands = 0;
 int headQueue = 0;
 
-/* Syncronization locks */
+/* Syncronization lock */
 pthread_mutex_t call_vector;
-pthread_mutex_t mutex;
-pthread_rwlock_t rwlock;
 
 /* Filenames for the inputfile and outputfile */
 char* outputfile = NULL;
 char* inputfile = NULL;
 
-/* Syncronization strategy */
-char* syncStrategy = NULL;
-
 /* Timestamps for the elapsed time */
 struct timeval tic, toc;
 
 void argumentParser(int argc, char* argv[]) {
-	if (argc != 5) {
+	if (argc != 4) {
 		fprintf(stderr, "Error: invalid arguments\n");
 		exit(EXIT_FAILURE);
 	}
@@ -41,21 +36,9 @@ void argumentParser(int argc, char* argv[]) {
 	inputfile = argv[1];
 	outputfile = argv[2];
 	numberThreads = atoi(argv[3]);
-	syncStrategy = argv[4];
 	
 	if (numberThreads < 1) {
 		fprintf(stderr, "Error: invalid number of threads\n");
-		exit(EXIT_FAILURE);
-	}
-
-	else if (!strcmp(syncStrategy, "nosync") && numberThreads != 1) {
-		fprintf(stderr, "Error: nosync only can be used with one thread\n");
-		exit(EXIT_FAILURE);
-	}
-
-	else if (strcmp(syncStrategy, "nosync") &&\
-			strcmp(syncStrategy, "mutex") && strcmp(syncStrategy, "rwlock")) {
-		fprintf(stderr, "Error: invalid SyncStrategy\n");
 		exit(EXIT_FAILURE);
 	}
 }
@@ -95,6 +78,9 @@ void errorParse() {
 
 void processInput(FILE *file) {
     char line[MAX_INPUT_SIZE];
+
+	/* Get time after the initialization of the process input */
+	gettimeofday(&tic, NULL);
 
     /* break loop with ^Z or ^D */
     while (fgets(line, sizeof(line)/sizeof(char), file)) {
@@ -140,6 +126,7 @@ void processInput(FILE *file) {
 }
 
 /* syncronization lock initializer */
+/*
 void sync_locks_init() {
 	if (pthread_mutex_init(&call_vector, NULL)) {
 		fprintf(stderr, "Error: could not initialize mutex: call_vector\n");
@@ -157,8 +144,11 @@ void sync_locks_init() {
         }
     }
 }
+*/
 
 /* syncronization lock destroyer */
+
+/*
 void sync_locks_destroy() {
 	if (pthread_mutex_destroy(&call_vector)) {
 		fprintf(stderr, "Error: could not destroy mutex: call_vector\n");
@@ -175,9 +165,10 @@ void sync_locks_destroy() {
             fprintf(stderr, "Error: could not destroy rwlock\n");
         }
     }
-}
+}*/
 
 /* TecnicoFS content -> syncronization lock enabler */
+/*
 void fs_lock(char token) {
     if (!strcmp(syncStrategy, "mutex")) {
         if (pthread_mutex_lock(&mutex)) {
@@ -199,8 +190,10 @@ void fs_lock(char token) {
         }
     }
 }
+*/
 
 /* TecnicoFS content -> syncronization lock disabler */
+/*
 void fs_unlock() {
     if (!strcmp(syncStrategy, "mutex")) {
         if (pthread_mutex_unlock(&mutex)) {
@@ -214,20 +207,25 @@ void fs_unlock() {
         }
     }
 }
+*/
 
 /* Call vector -> syncronization lock enabler */
+
 void call_vector_lock() {
 	if (pthread_mutex_lock(&call_vector)) {
 		fprintf(stderr, "Error: could not lock mutex: call_vector\n");
 	}
 }
 
+
 /* Call vector -> syncronization lock disabler */
+
 void call_vector_unlock() {
 	if (pthread_mutex_unlock(&call_vector)) {
 		fprintf(stderr, "Error: could not unlock mutex: call_vector\n");
 	}
 }
+
 
 void applyCommands() {
    	while (1) {
@@ -258,16 +256,16 @@ void applyCommands() {
 				case 'c':
 					switch (type) {
 						case 'f':
-							fs_lock(token);
+							// fs_lock(token);
 							printf("Create file: %s\n", name);
 							create(name, T_FILE);
-							fs_unlock();
+							// fs_unlock();
 							break;
 						case 'd':
-							fs_lock(token);
+							// fs_lock(token);
 							printf("Create directory: %s\n", name);
 							create(name, T_DIRECTORY);
-							fs_unlock();
+							// fs_unlock();
 							break;
 						default:
 							fprintf(stderr, "Error: invalid node type\n");
@@ -276,21 +274,21 @@ void applyCommands() {
 					break;
 
 				case 'l': 
-					fs_lock(token);
+					//fs_lock(token);
 					searchResult = lookup(name);
 					if (searchResult >= 0)
 						printf("Search: %s found\n", name);
 					else
 						printf("Search: %s not found\n", name);
 
-					fs_unlock();
+					//fs_unlock();
 					break;
 
 				case 'd':
-					fs_lock(token);
+					//fs_lock(token);
 					printf("Delete: %s\n", name);
 					delete(name);
-					fs_unlock();
+					//fs_unlock();
 					break;
 
 				default: { /* error */
@@ -325,8 +323,6 @@ void processPool() {
         }
     }
 	
-	/* Get time after the initialization of the process pool */
-	gettimeofday(&tic, NULL);
 
     for (i = 0; i < numberThreads; i++) {
 		if (pthread_join(tid[i], NULL)) {
@@ -354,10 +350,16 @@ int main(int argc, char* argv[]) {
     FILE* input = openFile(inputfile, "r");
 	processInput(input);
 	fclose(input);
-  	
-  	sync_locks_init();
+	
+	if (pthread_mutex_init(&call_vector, NULL)) {
+		fprintf(stderr, "Error: could not initialize mutex: call_vector\n");
+	}
+  	//sync_locks_init();
 	processPool();
-	sync_locks_destroy();
+	//sync_locks_destroy();
+	if (pthread_mutex_destroy(&call_vector)) {
+		fprintf(stderr, "Error: could not destroy mutex: call_vector\n");
+	}
 	
 	print_elapsed_time();
 
