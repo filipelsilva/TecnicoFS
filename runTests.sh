@@ -18,16 +18,19 @@ if ! make > /dev/null; then
 	exit 1
 fi
 
-# Create the output directory, in case it doesn't exist
-mkdir -p $outputdir
-
 # Run the program
-for file in `ls -p $inputdir | grep -v /`; do
-	for (( numthreads=1; numthreads<=$maxthreads; numthreads++ )); do
-		echo "InputFile=$file NumThreads=$numthreads"
-		./tecnicofs "$inputdir/$file" "$outputdir/$file-$numthreads" $numthreads mutex | grep "$filter"
+if [ -d $outputdir ]; then
+	for file in `ls -p $inputdir | grep -v /`; do
+		for (( numthreads=1; numthreads<=$maxthreads; numthreads++ )); do
+			echo "InputFile=$file NumThreads=$numthreads"
+			./tecnicofs "$inputdir/$file" "$outputdir/$file-$numthreads" $numthreads mutex | grep "$filter"
+		done
 	done
-done
+else
+	# if outputdir does not exist
+	echo "Error: $outputdir does not exist"
+	exit 1
+fi
 
 # Make clean and check for errors
 if ! make clean > /dev/null; then
