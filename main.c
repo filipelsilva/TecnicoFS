@@ -125,92 +125,7 @@ void processInput(FILE *file) {
     }
 }
 
-/* syncronization lock initializer */
-/*
-void sync_locks_init() {
-	if (pthread_mutex_init(&call_vector, NULL)) {
-		fprintf(stderr, "Error: could not initialize mutex: call_vector\n");
-	}
-
-    if (!strcmp(syncStrategy, "mutex")) {
-        if (pthread_mutex_init(&mutex, NULL)) {
-            fprintf(stderr, "Error: could not initialize mutex: mutex\n");
-        }
-    }
-
-    else if (!strcmp(syncStrategy, "rwlock")) {
-    	if (pthread_rwlock_init(&rwlock, NULL)) {
-            fprintf(stderr, "Error: could not initialize rwlock\n");
-        }
-    }
-}
-*/
-
-/* syncronization lock destroyer */
-
-/*
-void sync_locks_destroy() {
-	if (pthread_mutex_destroy(&call_vector)) {
-		fprintf(stderr, "Error: could not destroy mutex: call_vector\n");
-	}
-
-    if (!strcmp(syncStrategy, "mutex")) {
-        if (pthread_mutex_destroy(&mutex)) {
-            fprintf(stderr, "Error: could not destroy mutex: mutex\n");
-        }
-    }
-
-    else if (!strcmp(syncStrategy, "rwlock")) {
-    	if (pthread_rwlock_destroy(&rwlock)) {
-            fprintf(stderr, "Error: could not destroy rwlock\n");
-        }
-    }
-}*/
-
-/* TecnicoFS content -> syncronization lock enabler */
-/*
-void fs_lock(char token) {
-    if (!strcmp(syncStrategy, "mutex")) {
-        if (pthread_mutex_lock(&mutex)) {
-            fprintf(stderr, "Error: could not lock mutex: mutex\n");
-        }
-    }
-
-    else if (!strcmp(syncStrategy, "rwlock")) {
-        if (token == 'd' || token == 'c') {
-            if (pthread_rwlock_wrlock(&rwlock)) {
-                fprintf(stderr, "Error: could not lock rwlock (write)\n");
-            }
-        }
-
-        else if (token == 'l') {
-            if (pthread_rwlock_rdlock(&rwlock)) {
-                fprintf(stderr, "Error: could not lock rwlock (read-only)\n");
-            }
-        }
-    }
-}
-*/
-
-/* TecnicoFS content -> syncronization lock disabler */
-/*
-void fs_unlock() {
-    if (!strcmp(syncStrategy, "mutex")) {
-        if (pthread_mutex_unlock(&mutex)) {
-            fprintf(stderr, "Error: could not unlock mutex: mutex\n");
-        }
-    }
-
-    else if (!strcmp(syncStrategy, "rwlock")) {
-        if (pthread_rwlock_unlock(&rwlock)) {
-            fprintf(stderr, "Error: could not unlock rwlock\n");
-        }
-    }
-}
-*/
-
 /* Call vector -> syncronization lock enabler */
-
 void call_vector_lock() {
 	if (pthread_mutex_lock(&call_vector)) {
 		fprintf(stderr, "Error: could not lock mutex: call_vector\n");
@@ -219,7 +134,6 @@ void call_vector_lock() {
 
 
 /* Call vector -> syncronization lock disabler */
-
 void call_vector_unlock() {
 	if (pthread_mutex_unlock(&call_vector)) {
 		fprintf(stderr, "Error: could not unlock mutex: call_vector\n");
@@ -256,16 +170,12 @@ void applyCommands() {
 				case 'c':
 					switch (type) {
 						case 'f':
-							// fs_lock(token);
 							printf("Create file: %s\n", name);
 							create(name, T_FILE);
-							// fs_unlock();
 							break;
 						case 'd':
-							// fs_lock(token);
 							printf("Create directory: %s\n", name);
 							create(name, T_DIRECTORY);
-							// fs_unlock();
 							break;
 						default:
 							fprintf(stderr, "Error: invalid node type\n");
@@ -274,21 +184,17 @@ void applyCommands() {
 					break;
 
 				case 'l': 
-					//fs_lock(token);
 					searchResult = lookup(name);
 					if (searchResult >= 0)
 						printf("Search: %s found\n", name);
 					else
 						printf("Search: %s not found\n", name);
-
-					//fs_unlock();
+					
 					break;
 
 				case 'd':
-					//fs_lock(token);
 					printf("Delete: %s\n", name);
 					delete(name);
-					//fs_unlock();
 					break;
 
 				default: { /* error */
