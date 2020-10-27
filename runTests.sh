@@ -12,30 +12,14 @@ maxthreads=$3
 
 filter="TecnicoFS completed in"
 
-# Make and check for errors
-if ! make > /dev/null; then
-	echo "Error: Compilation failed"
+if [ ! -d $outputdir ]; then
+	echo "Error: folder named $outputdir does not exist"
 	exit 1
-fi
-
-# Run the program
-if [ -d $outputdir ]; then
+else
 	for file in `ls -p $inputdir | grep -v /`; do
-	#for file in $inputdir/*.txt; do 
-		#file=${file#"${inputdir}/"}
-		for (( numthreads=1; numthreads<=$maxthreads; numthreads++ )); do
+		for numthreads in $(seq 1 $maxthreads); do
 			echo "InputFile=$file NumThreads=$numthreads"
 			./tecnicofs "$inputdir/$file" "$outputdir/${file%.*}-$numthreads.txt" $numthreads mutex | grep "$filter"
 		done
 	done
-else
-	# if outputdir does not exist
-	echo "Error: $outputdir does not exist"
-	exit 1
-fi
-
-# Make clean and check for errors
-if ! make clean > /dev/null; then
-	echo "Error: Compilation failed"
-	exit 1
 fi
