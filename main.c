@@ -15,14 +15,16 @@ int numberThreads = 0;
 
 char inputCommands[MAX_COMMANDS][MAX_INPUT_SIZE];
 int numberCommands = 0;
-int headQueue = 0;
+int flag_cons = 1, flag_prod = 1;
+
+FILE* input; 
 
 /* Syncronization lock */
 pthread_mutex_t call_vector;
 
 pthread_cond_t canPut, canTake;
 
-int count = 0, iput = 0, itake = 0;
+int iput = 0, itake = 0;
 
 /* Filenames for the inputfile and outputfile */
 char* outputfile = NULL;
@@ -30,6 +32,21 @@ char* inputfile = NULL;
 
 /* Timestamps for the elapsed time */
 struct timeval tic, toc;
+
+/* Call vector -> syncronization lock enabler */
+void call_vector_lock() {
+	if (pthread_mutex_lock(&call_vector)) {
+		fprintf(stderr, "Error: could not lock mutex: call_vector\n");
+	}
+}
+
+
+/* Call vector -> syncronization lock disabler */
+void call_vector_unlock() {
+	if (pthread_mutex_unlock(&call_vector)) {
+		fprintf(stderr, "Error: could not unlock mutex: call_vector\n");
+	}
+}
 
 void argumentParser(int argc, char* argv[]) {
 	if (argc != 4) {
@@ -52,25 +69,52 @@ FILE* openFile(char* name, char* mode) {
 	FILE* fp = fopen(name, mode);
 	
 	if (fp == NULL) {	
-		fprintf(stderr, "Error: Error: could not open file\n");
+		fprintf(stderr, "Error: could not open file\n");
     	exit(TECNICOFS_ERROR_FILE_NOT_FOUND);
 	}
 	
 	return fp;
 }
 
-int insertCommand(char* data) {
-    strcpy(inputCommands[numberCommands++], data);
-    
-	return 1;
+void insertCommand(char* data) {
+	call_vector_lock();
+
+	while (numberCommands == MAX_COMMANDS) 
+		pthread_cond_wait(&canPut,&call_vector);
+
+	strcpy(inputCommands[iput++], data);
+	//printf("chegou aqui\n");
+			
+	if(iput==MAX_COMMANDS) 
+		iput = 0;
+
+	numberCommands++;
+
+	pthread_cond_signal(&canTake);
+	call_vector_unlock();
 }
 
 char* removeCommand() {
-	if(numberCommands > 0) {
+	char * command;
+	call_vector_lock();
+		
+	/* lock acess to call vector */
+		
+		while (numberCommands == 0) 
+			pthread_cond_wait(&canTake,&call_vector);
+
+		command = inputCommands[itake++];
+
+		if (itake == MAX_COMMANDS) 
+			itake = 0;
+
+		pthread_cond_signal(&canPut);
         numberCommands--;
-        return inputCommands[headQueue++];  
-    }
-	return NULL;
+        
+		call_vector_unlock();
+		return command; 
+
+
 }
 
 void errorParse() {
@@ -78,23 +122,16 @@ void errorParse() {
     exit(EXIT_FAILURE);
 }
 
-void processInput(FILE *file) {
+void processInput() {
     char line[MAX_INPUT_SIZE];
 
 	/* Get time after the initialization of the process input */
 	gettimeofday(&tic, NULL);
 
-
-
     /* break loop with ^Z or ^D */
-    while (fgets(line, sizeof(line)/sizeof(char), file)) {
+    while (fgets(line, sizeof(line)/sizeof(char), input)) {
         char token, type;
         char name[MAX_INPUT_SIZE];
-
-		pthread_mutex_lock(&call_vector);
-		
-		while (count == numberCommands) 
-			pthread_cond_wait(&canPut,&call_vector);
 
         int numTokens = sscanf(line, "%c %s %c", &token, name, &type);
 
@@ -106,22 +143,19 @@ void processInput(FILE *file) {
             case 'c':
                 if(numTokens != 3)
                     errorParse();
-                if(insertCommand(line))
-                    break;
+                insertCommand(line);
                 return;
             
             case 'l':
                 if(numTokens != 2)
                     errorParse();
-                if(insertCommand(line))
-                    break;
+                insertCommand(line);
                 return;
             
             case 'd':
                 if(numTokens != 2)
                     errorParse();
-                if(insertCommand(line))
-                    break;
+                insertCommand(line);
                 return;
             
             case '#':
@@ -134,33 +168,17 @@ void processInput(FILE *file) {
     }
 }
 
-/* Call vector -> syncronization lock enabler */
-void call_vector_lock() {
-	if (pthread_mutex_lock(&call_vector)) {
-		fprintf(stderr, "Error: could not lock mutex: call_vector\n");
-	}
-}
 
-
-/* Call vector -> syncronization lock disabler */
-void call_vector_unlock() {
-	if (pthread_mutex_unlock(&call_vector)) {
-		fprintf(stderr, "Error: could not unlock mutex: call_vector\n");
-	}
-}
 
 
 void applyCommands() {
    	while (1) {
-		/* lock acess to call vector */
-		call_vector_lock();
+		   if(numberCommands > 0){
 		
-		if (numberCommands > 0) {
-
+		
 			const char* command = removeCommand();
 
-			/* unlock acess to call vector */
-			call_vector_unlock();
+		
 
 			if (command == NULL) {
 				continue;
@@ -211,28 +229,39 @@ void applyCommands() {
 					exit(EXIT_FAILURE);
 				}
 			} 
-    	}
-
-		else {
-			call_vector_unlock();
-			break;
-		}
+		   }
 	}
 }
 
+void* fnThread_producer() {
+	while(flag_prod)
+		processInput();
+	return NULL;
+}
+
 /* wrapper function, calling applyCommands */
-void* fnThread() {
-	applyCommands();
+void* fnThread_consumer() {
+	while(flag_cons)
+		applyCommands();
 	return NULL;
 }
 
 /* process pool initializer and runner */
 void processPool() {
 	int i = 0;
-	pthread_t tid[numberThreads];
+	pthread_t tid_producer[numberThreads];
+	pthread_t tid_consumer[numberThreads];
    	 
+	
     for (i = 0; i < numberThreads; i++) {
-        if (pthread_create(&tid[i], NULL, fnThread, NULL)) {
+        if (pthread_create(&tid_producer[i], NULL, fnThread_producer, NULL)) {
+            fprintf(stderr, "Error: could not create threads\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+	for (i = 0; i < numberThreads; i++) {
+        if (pthread_create(&tid_consumer[i], NULL, fnThread_consumer, NULL)) {
             fprintf(stderr, "Error: could not create threads\n");
             exit(EXIT_FAILURE);
         }
@@ -240,7 +269,13 @@ void processPool() {
 	
 
     for (i = 0; i < numberThreads; i++) {
-		if (pthread_join(tid[i], NULL)) {
+		if (pthread_join(tid_producer[i], NULL)) {
+			fprintf(stderr, "Error: could not join thread\n");
+		}
+    }
+
+	for (i = 0; i < numberThreads; i++) {
+		if (pthread_join(tid_consumer[i], NULL)) {
 			fprintf(stderr, "Error: could not join thread\n");
 		}
     }
@@ -261,10 +296,6 @@ int main(int argc, char* argv[]) {
 	
 	argumentParser(argc, argv);
 
-	/* process input */
-    FILE* input = openFile(inputfile, "r");
-	processInput(input);
-	fclose(input);
 	
 	if (pthread_mutex_init(&call_vector, NULL)) {
 		fprintf(stderr, "Error: could not initialize mutex: call_vector\n");
@@ -278,12 +309,29 @@ int main(int argc, char* argv[]) {
 		fprintf(stderr, "Error: could not initialize cond: canTake\n");
 	}
 
+	/* process input */
+    input = openFile(inputfile, "r");
+
   	//sync_locks_init();
 	processPool();
+
+	fclose(input);
 	//sync_locks_destroy();
+	if (pthread_cond_destroy(&canTake)) {
+		fprintf(stderr, "Error: could not destroy mutex: canTake\n");
+	}
+
+	if (pthread_cond_destroy(&canPut)) {
+		fprintf(stderr, "Error: could not destroy cond: canPut\n");
+	}
+
 	if (pthread_mutex_destroy(&call_vector)) {
 		fprintf(stderr, "Error: could not destroy mutex: call_vector\n");
 	}
+
+	
+
+	
 	
 	print_elapsed_time();
 
