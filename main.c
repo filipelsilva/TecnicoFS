@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include "fs/operations.h"
 
-#define MAX_COMMANDS 150000
+#define MAX_COMMANDS 10
 #define MAX_INPUT_SIZE 100
 
 int numberThreads = 0;
@@ -19,6 +19,10 @@ int headQueue = 0;
 
 /* Syncronization lock */
 pthread_mutex_t call_vector;
+
+pthread_cond_t canPut, canTake;
+
+int count = 0, iput = 0, itake = 0;
 
 /* Filenames for the inputfile and outputfile */
 char* outputfile = NULL;
@@ -56,11 +60,9 @@ FILE* openFile(char* name, char* mode) {
 }
 
 int insertCommand(char* data) {
-    if(numberCommands != MAX_COMMANDS) {
-        strcpy(inputCommands[numberCommands++], data);
-        return 1;
-    }
-    return 0;
+    strcpy(inputCommands[numberCommands++], data);
+    
+	return 1;
 }
 
 char* removeCommand() {
@@ -82,10 +84,17 @@ void processInput(FILE *file) {
 	/* Get time after the initialization of the process input */
 	gettimeofday(&tic, NULL);
 
+
+
     /* break loop with ^Z or ^D */
     while (fgets(line, sizeof(line)/sizeof(char), file)) {
         char token, type;
         char name[MAX_INPUT_SIZE];
+
+		pthread_mutex_lock(&call_vector);
+		
+		while (count == numberCommands) 
+			pthread_cond_wait(&canPut,&call_vector);
 
         int numTokens = sscanf(line, "%c %s %c", &token, name, &type);
 
@@ -260,6 +269,15 @@ int main(int argc, char* argv[]) {
 	if (pthread_mutex_init(&call_vector, NULL)) {
 		fprintf(stderr, "Error: could not initialize mutex: call_vector\n");
 	}
+
+	if (pthread_cond_init(&canPut, NULL)) {
+		fprintf(stderr, "Error: could not initialize cond: canPut\n");
+	}
+
+	if (pthread_cond_init(&canTake, NULL)) {
+		fprintf(stderr, "Error: could not initialize cond: canTake\n");
+	}
+
   	//sync_locks_init();
 	processPool();
 	//sync_locks_destroy();
