@@ -48,7 +48,7 @@ FILE* openFile(char* name, char* mode) {
 	FILE* fp = fopen(name, mode);
 	
 	if (fp == NULL) {	
-		fprintf(stderr, "Error: Error: could not open file\n");
+		fprintf(stderr, "Error: could not open file\n");
     	exit(TECNICOFS_ERROR_FILE_NOT_FOUND);
 	}
 	
@@ -184,7 +184,7 @@ void applyCommands() {
 					break;
 
 				case 'l': 
-					searchResult = lookup(name);
+					searchResult = lookup(name, 1);
 					if (searchResult >= 0)
 						printf("Search: %s found\n", name);
 					else
@@ -221,7 +221,7 @@ void* fnThread() {
 void processPool() {
 	int i = 0;
 	pthread_t tid[numberThreads];
-   	 
+   	
     for (i = 0; i < numberThreads; i++) {
         if (pthread_create(&tid[i], NULL, fnThread, NULL)) {
             fprintf(stderr, "Error: could not create threads\n");
