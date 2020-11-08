@@ -12,14 +12,16 @@ maxthreads=$3
 
 filter="TecnicoFS completed in"
 
-if [ ! -d $outputdir ]; then
+if [ ! -d "$outputdir" ]; then
 	echo "Error: folder named $outputdir does not exist"
 	exit 1
 else
-	for file in `ls -p $inputdir | grep -v /`; do
-		for numthreads in $(seq 1 $maxthreads); do
+	for file in "$inputdir"/*.txt; do
+		filename=${file#"$inputdir"/}
+		filename=${filename%.*}
+		for numthreads in $(seq 1 "$maxthreads"); do
 			echo "InputFile=$file NumThreads=$numthreads"
-			./tecnicofs "$inputdir/$file" "$outputdir/${file%.*}-$numthreads.txt" $numthreads mutex | grep "$filter"
+			./tecnicofs "$file" "$outputdir/$filename-$numthreads.txt" "$numthreads" mutex | grep "$filter"
 		done
 	done
 fi
