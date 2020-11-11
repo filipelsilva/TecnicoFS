@@ -5,6 +5,7 @@
 *.swp
 *.out
 *.orig
+*.bak
 tecnicofs
 inputfile
 outputfile
