@@ -267,6 +267,58 @@ int lookup(char *name) {
 }
 
 
+int move(char* current_pathname, char* new_pathname){
+	char *current_parent_name, *current_child_name, *new_parent_name, *new_child_name;
+	int new_parent_inumber, current_child_inumber, current_parent_inumber;
+
+    char *pathname_copy;
+
+	strcpy(pathname_copy, current_pathname);
+    current_child_inumber = lookup(current_pathname);
+
+	/* checks if there is a directory/file with the current pathname*/
+	if (lookup(current_pathname) == FAIL){
+		printf("failed to move %s to %s, %s doesn't exists\n",
+		        current_pathname, new_pathname, current_pathname);
+		return FAIL;
+	}
+
+	/* checks if there isn't a directory/file with the new pathname*/
+	if(lookup(new_pathname) != FAIL){
+		printf("failed to move %s to %s, there is already a %s\n",
+		        current_pathname, new_pathname, new_pathname);
+		return FAIL;
+	}
+
+	/* separates child from parent in the current pathname*/
+	split_parent_child_from_path(current_pathname, &current_parent_name,
+                              &current_child_name);
+
+    /* separates child from parent in the new pathname*/
+	split_parent_child_from_path(new_pathname, &new_parent_name, &new_child_name);
+
+
+	new_parent_inumber = lookup(new_parent_name);
+    current_parent_inumber = lookup(current_parent_name);
+
+    /* removes the current child from the parent in the current pathname*/
+    if (dir_reset_entry(current_parent_inumber, current_child_inumber) == FAIL) {
+        printf("failed to delete %s from dir %s\n",
+               current_child_name, current_parent_name);
+        return FAIL;
+    }
+
+    /* adds the current child to the parent in the new pathname with the new name*/
+	if (dir_add_entry(new_parent_inumber, current_child_inumber, new_child_name) == FAIL) {
+		printf("could not add entry %s in dir %s\n",
+		       current_child_name, new_parent_name);
+		return FAIL;
+	}
+
+	return SUCCESS;
+}
+
+
 /*
  * Prints tecnicofs tree.
  * Input:
