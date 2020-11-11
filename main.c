@@ -184,7 +184,7 @@ void applyCommands() {
 					break;
 
 				case 'l': 
-					searchResult = lookup(name, 1);
+					searchResult = lookup(name);
 					if (searchResult >= 0)
 						printf("Search: %s found\n", name);
 					else
