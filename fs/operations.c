@@ -271,7 +271,7 @@ int move(char* current_pathname, char* new_pathname){
 	char *current_parent_name, *current_child_name, *new_parent_name, *new_child_name;
 	int new_parent_inumber, current_child_inumber, current_parent_inumber;
 
-    char *pathname_copy;
+    char pathname_copy[MAX_FILE_NAME];
 
 	strcpy(pathname_copy, current_pathname);
     current_child_inumber = lookup(current_pathname);
