@@ -167,7 +167,7 @@ void* applyCommands() {
 		}
 
 		char token;
-		char name[MAX_INPUT_SIZE],type[MAX_INPUT_SIZE];
+		char name[MAX_INPUT_SIZE], type[MAX_INPUT_SIZE];
 		int numTokens = sscanf(command, "%c %s %s", &token, name, type);
 
 		if (numTokens < 2) {
@@ -208,7 +208,7 @@ void* applyCommands() {
 				break;
 			
 			case 'm':
-				printf("Moving: %s to %s \n", name, type);
+				printf("Moving: %s to %s\n", name, type);
 				move(name, type);
 				break;			
 

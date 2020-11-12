@@ -297,7 +297,6 @@ int move(char* current_pathname, char* new_pathname){
     /* separates child from parent in the new pathname*/
 	split_parent_child_from_path(new_pathname, &new_parent_name, &new_child_name);
 
-
 	new_parent_inumber = lookup(new_parent_name);
     current_parent_inumber = lookup(current_parent_name);
 
