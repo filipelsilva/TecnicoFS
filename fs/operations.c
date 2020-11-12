@@ -178,7 +178,7 @@ int create(char *name, type nodeType){
 	/* create node and add entry to folder that contains new node */
 	child_inumber = inode_create(nodeType);
 	inode_lock_enable(child_inumber, 'w');
-	vector_inumber[i++] = child_inumber;
+	vector_inumber[i] = child_inumber;
 
 	if (child_inumber == FAIL) {
 		printf("failed to create %s in  %s, couldn't allocate inode\n",
@@ -248,7 +248,7 @@ int delete(char *name){
 
 	child_inumber = lookup_sub_node(child_name, pdata.dirEntries);
 	inode_lock_enable(child_inumber, 'w');
-	vector_inumber[i++] = child_inumber;
+	vector_inumber[i] = child_inumber;
 
 	if (child_inumber == FAIL) {
 		printf("could not delete %s, does not exist in dir %s\n",
