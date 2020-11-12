@@ -278,7 +278,7 @@ int move(char* current_pathname, char* new_pathname){
 
 	/* checks if there is a directory/file with the current pathname*/
 	if (lookup(current_pathname) == FAIL){
-		printf("failed to move %s to %s, %s doesn't exists\n",
+		printf("failed to move %s to %s, %s doesn't exist\n",
 		        current_pathname, new_pathname, current_pathname);
 		return FAIL;
 	}
