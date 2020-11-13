@@ -233,8 +233,9 @@ void applyCommands() {
 }
 
 void* fnThread_producer() {
-    while(flag_consumer)
-    processInput();
+    while(flag_consumer) {
+        processInput();
+    }
 	return NULL;
 }
 
