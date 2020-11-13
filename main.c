@@ -15,16 +15,14 @@ int numberThreads = 0;
 
 char inputCommands[MAX_COMMANDS][MAX_INPUT_SIZE];
 int numberCommands = 0;
-int flag_cons = 1, flag_prod = 1;
+int flag_consumer = 1, flag_producer = 1;
+int iproducer = 0, iconsumer = 0;
 
 FILE* input; 
 
 /* Syncronization lock */
 pthread_mutex_t call_vector;
-
-pthread_cond_t canPut, canTake;
-
-int iput = 0, itake = 0;
+pthread_cond_t vector_producer, vector_consumer;
 
 /* Filenames for the inputfile and outputfile */
 char* outputfile = NULL;
@@ -77,43 +75,45 @@ FILE* openFile(char* name, char* mode) {
 }
 
 void insertCommand(char* data) {
-	call_vector_lock();
+    call_vector_lock();
 
-	while (numberCommands == MAX_COMMANDS) 
-		pthread_cond_wait(&canPut,&call_vector);
+    while (numberCommands == MAX_COMMANDS)
+        pthread_cond_wait(&vector_producer, &call_vector);
 
-	strcpy(inputCommands[iput++], data);
-	//printf("chegou aqui\n");
-			
-	if(iput==MAX_COMMANDS) 
-		iput = 0;
+    strcpy(inputCommands[iproducer++], data);
 
-	numberCommands++;
+    if (iproducer == MAX_COMMANDS)
+        iproducer = 0;
 
-	pthread_cond_signal(&canTake);
-	call_vector_unlock();
+    numberCommands++;
+
+    pthread_cond_signal(&vector_consumer);
+    call_vector_unlock();
 }
+
 
 char* removeCommand() {
 	char * command;
-	call_vector_lock();
-		
-	/* lock acess to call vector */
-		
+
+    /* lock acess to call vector */
+    call_vector_lock();
+
 	while (numberCommands == 0) 
-		pthread_cond_wait(&canTake,&call_vector);
+		pthread_cond_wait(&vector_consumer, &call_vector);
 
-	command = inputCommands[itake++];
+	command = inputCommands[iconsumer++];
 
-	if (itake == MAX_COMMANDS) 
-		itake = 0;
+	if (iconsumer == MAX_COMMANDS)
+        iconsumer = 0;
 
-	pthread_cond_signal(&canPut);
-	numberCommands--;
-	
+    numberCommands--;
+
+	pthread_cond_signal(&vector_producer);
 	call_vector_unlock();
-	return command; 
+
+	return command;
 }
+
 
 void errorParse() {
     fprintf(stderr, "Error: command invalid\n");
@@ -137,6 +137,7 @@ void processInput() {
         if (numTokens < 1) {
             continue;
         }
+
         switch (token) {
             case 'c':
                 if(numTokens != 3)
@@ -164,109 +165,109 @@ void processInput() {
             }
         }
     }
+    /* end of file */
+    flag_producer = 0;
+
 }
-
-
 
 
 void applyCommands() {
-   	while (1) {
-	
-	if(numberCommands > 0){
+    while (flag_consumer) {
+        if (flag_producer == 0 && numberCommands == 0) {
+            flag_consumer = 0;
 
-	const char* command = removeCommand();
+        } else if (numberCommands > 0) {
+            const char *command = removeCommand();
 
-	if (command == NULL) {
-		continue;
-	}
+            if (command == NULL) {
+                continue;
+            }
 
-	char token, type;
-	char name[MAX_INPUT_SIZE];
-	int numTokens = sscanf(command, "%c %s %c", &token, name, &type);
-	if (numTokens < 2) {
-		fprintf(stderr, "Error: invalid command in Queue\n");
-		exit(EXIT_FAILURE);
-	}
+            char token, type;
+            char name[MAX_INPUT_SIZE];
+            int numTokens = sscanf(command, "%c %s %c", &token, name, &type);
 
-	int searchResult;
-	switch (token) {
-		case 'c':
-			switch (type) {
-				case 'f':
-					printf("Create file: %s\n", name);
-					create(name, T_FILE);
-					break;
-				case 'd':
-					printf("Create directory: %s\n", name);
-					create(name, T_DIRECTORY);
-					break;
-				default:
-					fprintf(stderr, "Error: invalid node type\n");
-					exit(EXIT_FAILURE);
-			}
-			break;
+            if (numTokens < 2) {
+                fprintf(stderr, "Error: invalid command in Queue\n");
+                exit(EXIT_FAILURE);
+            }
 
-		case 'l': 
-			searchResult = lookup(name);
-			if (searchResult >= 0)
-				printf("Search: %s found\n", name);
-			else
-				printf("Search: %s not found\n", name);
-			
-			break;
+            int searchResult;
+            switch (token) {
+                case 'c':
+                    switch (type) {
+                        case 'f':
+                            printf("Create file: %s\n", name);
+                            create(name, T_FILE);
+                            break;
+                        case 'd':
+                            printf("Create directory: %s\n", name);
+                            create(name, T_DIRECTORY);
+                            break;
+                        default:
+                            fprintf(stderr, "Error: invalid node type\n");
+                            exit(EXIT_FAILURE);
+                    }
+                    break;
 
-		case 'd':
-			printf("Delete: %s\n", name);
-			delete(name);
-			break;
+                case 'l':
+                    searchResult = lookup(name);
+                    if (searchResult >= 0)
+                        printf("Search: %s found\n", name);
+                    else
+                        printf("Search: %s not found\n", name);
+                    break;
 
-		default: { /* error */
-			fprintf(stderr, "Error: command to apply\n");
-			exit(EXIT_FAILURE);
-		}
-	} 
-	}
-	}
+                case 'd':
+                    printf("Delete: %s\n", name);
+                    delete(name);
+                    break;
+
+                default: { /* error */
+                    fprintf(stderr, "Error: command to apply\n");
+                    exit(EXIT_FAILURE);
+                }
+            }
+        }
+    }
 }
 
 void* fnThread_producer() {
-	while(flag_prod)
-		processInput();
+    while(flag_consumer)
+    processInput();
 	return NULL;
 }
 
 /* wrapper function, calling applyCommands */
 void* fnThread_consumer() {
-	while(flag_cons)
-		applyCommands();
+    applyCommands();
 	return NULL;
 }
 
 /* process pool initializer and runner */
 void processPool() {
-	int i = 0;
+	int i;
 	pthread_t tid_producer;
 	pthread_t tid_consumer[numberThreads - 1];
    	 
 	
     if (pthread_create(&tid_producer, NULL, fnThread_producer, NULL)){
-            fprintf(stderr, "Error: could not create threads\n");
-            exit(EXIT_FAILURE);
+        fprintf(stderr, "Error: could not create threads\n");
+        exit(EXIT_FAILURE);
     }
 
-	for (i = 0; i < numberThreads; i++) {
+	for (i = 0; i < numberThreads - 1; i++) {
         if (pthread_create(&tid_consumer[i], NULL, fnThread_consumer, NULL)) {
             fprintf(stderr, "Error: could not create threads\n");
             exit(EXIT_FAILURE);
         }
     }
-	
 
-    if (pthread_join(tid_producer[i], NULL)) {
+    if (pthread_join(tid_producer, NULL)) {
 		fprintf(stderr, "Error: could not join thread\n");
 	}
 
-	for (i = 0; i < numberThreads; i++) {
+	for (i = 0; i < numberThreads - 1; i++) {
 		if (pthread_join(tid_consumer[i], NULL)) {
 			fprintf(stderr, "Error: could not join thread\n");
 		}
@@ -276,11 +277,13 @@ void processPool() {
 	gettimeofday(&toc, NULL);
 }
 
+
 void print_elapsed_time() {
 	printf("TecnicoFS completed in %.4f seconds.\n",\
 			(double) (toc.tv_usec - tic.tv_usec) / \
 			1000000 + (double) (toc.tv_sec - tic.tv_sec));
 }
+
 
 int main(int argc, char* argv[]) {
     /* init filesystem */
@@ -288,17 +291,16 @@ int main(int argc, char* argv[]) {
 	
 	argumentParser(argc, argv);
 
-	
 	if (pthread_mutex_init(&call_vector, NULL)) {
 		fprintf(stderr, "Error: could not initialize mutex: call_vector\n");
 	}
 
-	if (pthread_cond_init(&canPut, NULL)) {
-		fprintf(stderr, "Error: could not initialize cond: canPut\n");
+	if (pthread_cond_init(&vector_producer, NULL)) {
+		fprintf(stderr, "Error: could not initialize condition: vector_producer\n");
 	}
 
-	if (pthread_cond_init(&canTake, NULL)) {
-		fprintf(stderr, "Error: could not initialize cond: canTake\n");
+	if (pthread_cond_init(&vector_consumer, NULL)) {
+		fprintf(stderr, "Error: could not initialize condition: vector_consumer\n");
 	}
 
 	/* process input */
@@ -309,22 +311,18 @@ int main(int argc, char* argv[]) {
 
 	fclose(input);
 	//sync_locks_destroy();
-	if (pthread_cond_destroy(&canTake)) {
-		fprintf(stderr, "Error: could not destroy mutex: canTake\n");
+	if (pthread_cond_destroy(&vector_consumer)) {
+		fprintf(stderr, "Error: could not destroy mutex: vector_consumer\n");
 	}
 
-	if (pthread_cond_destroy(&canPut)) {
-		fprintf(stderr, "Error: could not destroy cond: canPut\n");
+	if (pthread_cond_destroy(&vector_producer)) {
+		fprintf(stderr, "Error: could not destroy condition: vector_producer\n");
 	}
 
 	if (pthread_mutex_destroy(&call_vector)) {
-		fprintf(stderr, "Error: could not destroy mutex: call_vector\n");
+		fprintf(stderr, "Error: could not destroy condition: call_vector\n");
 	}
 
-	
-
-	
-	
 	print_elapsed_time();
 
 	/* print tree */
