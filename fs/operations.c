@@ -121,6 +121,15 @@ int lookup_sub_node(char *name, DirEntry *entries) {
 	return FAIL;
 }
 
+void display_create(char * name, type nodeType){
+    if (nodeType == T_FILE){
+        printf("Create file: %s\n", name);
+    }
+    else{ /* nodeType == T_Directory*/
+        printf("Create directory: %s\n", name);
+    }
+}
+
 
 /*
  * Creates a new node given a path.
@@ -150,6 +159,7 @@ int create(char *name, type nodeType){
 	vector_inumber[i++] = parent_inumber;
 
 	if (parent_inumber == FAIL) {
+	    display_create(name, nodeType);
 		printf("failed to create %s, invalid parent dir %s\n",
 		name, parent_name); 
 				
@@ -160,6 +170,7 @@ int create(char *name, type nodeType){
 	inode_get(parent_inumber, &pType, &pdata);
 
 	if(pType != T_DIRECTORY) {
+        display_create(name, nodeType);
 		printf("failed to create %s, parent %s is not a dir\n",
 		        name, parent_name);
 		
@@ -168,6 +179,7 @@ int create(char *name, type nodeType){
 	}
 
 	if (lookup_sub_node(child_name, pdata.dirEntries) != FAIL) {
+        display_create(name, nodeType);
 		printf("failed to create %s, already exists in dir %s\n",
 		       child_name, parent_name);
 		
@@ -181,6 +193,7 @@ int create(char *name, type nodeType){
 	vector_inumber[i] = child_inumber;
 
 	if (child_inumber == FAIL) {
+        display_create(name, nodeType);
 		printf("failed to create %s in  %s, couldn't allocate inode\n",
 		        child_name, parent_name);
 		
@@ -189,6 +202,7 @@ int create(char *name, type nodeType){
 	}
 
 	if (dir_add_entry(parent_inumber, child_inumber, child_name) == FAIL) {
+        display_create(name, nodeType);
 		printf("could not add entry %s in dir %s\n",
 		       child_name, parent_name);
 		
@@ -198,6 +212,7 @@ int create(char *name, type nodeType){
 
 	disable_locks(vector_inumber);
 	free(vector_inumber);
+    display_create(name, nodeType);
 	return SUCCESS;
 }
 
@@ -229,6 +244,7 @@ int delete(char *name){
 	vector_inumber[i++] = parent_inumber;
 	
 	if (parent_inumber == FAIL) {
+        printf("Delete: %s\n", name);
 		printf("failed to delete %s, invalid parent dir %s\n",
 		        child_name, parent_name);	 	
 		
@@ -239,6 +255,7 @@ int delete(char *name){
 	inode_get(parent_inumber, &pType, &pdata);
 
 	if(pType != T_DIRECTORY) {
+        printf("Delete: %s\n", name);
 		printf("failed to delete %s, parent %s is not a dir\n",
 		        child_name, parent_name);
 		
@@ -251,6 +268,7 @@ int delete(char *name){
 	vector_inumber[i] = child_inumber;
 
 	if (child_inumber == FAIL) {
+        printf("Delete: %s\n", name);
 		printf("could not delete %s, does not exist in dir %s\n",
 		       name, parent_name);
 		
@@ -261,6 +279,7 @@ int delete(char *name){
 	inode_get(child_inumber, &cType, &cdata);
 
 	if (cType == T_DIRECTORY && is_dir_empty(cdata.dirEntries) == FAIL) {
+        printf("Delete: %s\n", name);
 		printf("could not delete %s: is a directory and not empty\n",
 		       name);
 		
@@ -270,6 +289,7 @@ int delete(char *name){
 
 	/* remove entry from folder that contained deleted node */
 	if (dir_reset_entry(parent_inumber, child_inumber) == FAIL) {
+        printf("Delete: %s\n", name);
 		printf("failed to delete %s from dir %s\n",
 		       child_name, parent_name);
 		
@@ -278,6 +298,7 @@ int delete(char *name){
 	}
 
 	if (inode_delete(child_inumber) == FAIL) {
+        printf("Delete: %s\n", name);
 		printf("could not delete inode number %d from dir %s\n",
 		       child_inumber, parent_name);
 		
@@ -288,6 +309,7 @@ int delete(char *name){
 
 	disable_locks(vector_inumber);
 	free(vector_inumber);
+    printf("Delete: %s\n", name);
 	return SUCCESS;
 }
 
