@@ -170,11 +170,11 @@ void applyCommands() {
 				case 'c':
 					switch (type) {
 						case 'f':
-							printf("Create file: %s\n", name);
+							//printf("Create file: %s\n", name);
 							create(name, T_FILE);
 							break;
 						case 'd':
-							printf("Create directory: %s\n", name);
+							//printf("Create directory: %s\n", name);
 							create(name, T_DIRECTORY);
 							break;
 						default:
@@ -193,7 +193,6 @@ void applyCommands() {
 					break;
 
 				case 'd':
-					printf("Delete: %s\n", name);
 					delete(name);
 					break;
 
