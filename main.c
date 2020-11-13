@@ -80,20 +80,16 @@ void insertCommand(char* data) {
     while (numberCommands == MAX_COMMANDS)
         pthread_cond_wait(&vector_producer, &call_vector);
 
-    strcpy(inputCommands[iproducer++], data);
-
-    if (iproducer == MAX_COMMANDS)
-        iproducer = 0;
-
+    strcpy(inputCommands[iproducer % MAX_COMMANDS], data);
+    iproducer++;
     numberCommands++;
 
     pthread_cond_signal(&vector_consumer);
     call_vector_unlock();
 }
 
-
 char* removeCommand() {
-	char * command;
+	char *command;
 
     /* lock acess to call vector */
     call_vector_lock();
@@ -101,11 +97,8 @@ char* removeCommand() {
 	while (numberCommands == 0) 
 		pthread_cond_wait(&vector_consumer, &call_vector);
 
-	command = inputCommands[iconsumer++];
-
-	if (iconsumer == MAX_COMMANDS)
-        iconsumer = 0;
-
+	command = inputCommands[iconsumer % MAX_COMMANDS];
+    iconsumer++;
     numberCommands--;
 
 	pthread_cond_signal(&vector_producer);
@@ -113,7 +106,6 @@ char* removeCommand() {
 
 	return command;
 }
-
 
 void errorParse() {
     fprintf(stderr, "Error: command invalid\n");
@@ -167,9 +159,7 @@ void processInput() {
     }
     /* end of file */
     flag_producer = 0;
-
 }
-
 
 void applyCommands() {
     while (flag_consumer) {
