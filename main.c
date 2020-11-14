@@ -84,10 +84,9 @@ void processInput(FILE *file) {
 
     /* break loop with ^Z or ^D */
     while (fgets(line, sizeof(line)/sizeof(char), file)) {
-        char token, type;
-        char name[MAX_INPUT_SIZE];
-
-        int numTokens = sscanf(line, "%c %s %c", &token, name, &type);
+        char token;
+        char name[MAX_INPUT_SIZE], type[MAX_INPUT_SIZE];
+        int numTokens = sscanf(line, "%c %s %s", &token, name, type);
 
         /* perform minimal validation */
         if (numTokens < 1) {
@@ -114,7 +113,14 @@ void processInput(FILE *file) {
                 if(insertCommand(line))
                     break;
                 return;
-            
+			
+			case 'm':
+				if(numTokens != 3)
+					errorParse();
+				if(insertCommand(line))
+                    break;
+                return;
+
             case '#':
                 break;
             
@@ -160,9 +166,10 @@ void* applyCommands() {
 			continue;
 		}
 
-		char token, type;
-		char name[MAX_INPUT_SIZE];
-		int numTokens = sscanf(command, "%c %s %c", &token, name, &type);
+		char token;
+		char name[MAX_INPUT_SIZE], type[MAX_INPUT_SIZE];
+		int numTokens = sscanf(command, "%c %s %s", &token, name, type);
+
 		if (numTokens < 2) {
 			fprintf(stderr, "Error: invalid command in Queue\n");
 			exit(EXIT_FAILURE);
@@ -171,7 +178,7 @@ void* applyCommands() {
 		int searchResult;
 		switch (token) {
 			case 'c':
-				switch (type) {
+				switch (type[0]) {
 					case 'f':
 						create(name, T_FILE);
 						break;
@@ -196,6 +203,11 @@ void* applyCommands() {
 			case 'd':
 				delete(name);
 				break;
+			
+			case 'm':
+				printf("Moving: %s to %s\n", name, type);
+				move(name, type);
+				break;			
 
 			default: { /* error */
 				fprintf(stderr, "Error: command to apply\n");
@@ -208,7 +220,7 @@ void* applyCommands() {
 
 /* process pool initializer and runner */
 void processPool() {
-	int i = 0;
+    int i;
 	pthread_t tid[numberThreads];
    	 
     for (i = 0; i < numberThreads; i++) {

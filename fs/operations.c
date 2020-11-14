@@ -45,10 +45,10 @@ void split_parent_child_from_path(char * path, char ** parent, char ** child) {
  */
 void init_fs() {
 	inode_table_init();
-	
+
 	/* create root inode */
 	int root = inode_create(T_DIRECTORY);
-	
+
 	if (root != FS_ROOT) {
 		printf("failed to create node for tecnicofs root\n");
 		exit(EXIT_FAILURE);
@@ -98,10 +98,10 @@ int lookup_sub_node(char *name, DirEntry *entries) {
 		return FAIL;
 	}
 	for (int i = 0; i < MAX_DIR_ENTRIES; i++) {
-        if (entries[i].inumber != FREE_INODE && strcmp(entries[i].name, name) == 0) {
-            return entries[i].inumber;
-        }
-    }
+		if (entries[i].inumber != FREE_INODE && strcmp(entries[i].name, name) == 0) {
+			return entries[i].inumber;
+		}
+	}
 	return FAIL;
 }
 
@@ -137,7 +137,7 @@ int create(char *name, type nodeType){
 	if (parent_inumber == FAIL) {
         display_create(name, nodeType);
 		printf("failed to create %s, invalid parent dir %s\n",
-		        name, parent_name);
+				name, parent_name);
 		return FAIL;
 	}
 
@@ -146,14 +146,14 @@ int create(char *name, type nodeType){
 	if(pType != T_DIRECTORY) {
         display_create(name, nodeType);
 		printf("failed to create %s, parent %s is not a dir\n",
-		        name, parent_name);
+				name, parent_name);
 		return FAIL;
 	}
 
 	if (lookup_sub_node(child_name, pdata.dirEntries) != FAIL) {
         display_create(name, nodeType);
 		printf("failed to create %s, already exists in dir %s\n",
-		       child_name, parent_name);
+				child_name, parent_name);
 		return FAIL;
 	}
 
@@ -162,14 +162,14 @@ int create(char *name, type nodeType){
 	if (child_inumber == FAIL) {
         display_create(name, nodeType);
 		printf("failed to create %s in  %s, couldn't allocate inode\n",
-		        child_name, parent_name);
+				child_name, parent_name);
 		return FAIL;
 	}
 
 	if (dir_add_entry(parent_inumber, child_inumber, child_name) == FAIL) {
         display_create(name, nodeType);
 		printf("could not add entry %s in dir %s\n",
-		       child_name, parent_name);
+				child_name, parent_name);
 		return FAIL;
 	}
 
@@ -200,7 +200,7 @@ int delete(char *name){
 	if (parent_inumber == FAIL) {
         printf("Delete: %s\n", name);
 		printf("failed to delete %s, invalid parent dir %s\n",
-		        child_name, parent_name);
+				child_name, parent_name);
 		return FAIL;
 	}
 
@@ -209,7 +209,7 @@ int delete(char *name){
 	if(pType != T_DIRECTORY) {
         printf("Delete: %s\n", name);
 		printf("failed to delete %s, parent %s is not a dir\n",
-		        child_name, parent_name);
+				child_name, parent_name);
 		return FAIL;
 	}
 
@@ -218,7 +218,7 @@ int delete(char *name){
 	if (child_inumber == FAIL) {
         printf("Delete: %s\n", name);
 		printf("could not delete %s, does not exist in dir %s\n",
-		       name, parent_name);
+				name, parent_name);
 		return FAIL;
 	}
 
@@ -227,7 +227,7 @@ int delete(char *name){
 	if (cType == T_DIRECTORY && is_dir_empty(cdata.dirEntries) == FAIL) {
         printf("Delete: %s\n", name);
 		printf("could not delete %s: is a directory and not empty\n",
-		       name);
+				name);
 		return FAIL;
 	}
 
@@ -235,14 +235,14 @@ int delete(char *name){
 	if (dir_reset_entry(parent_inumber, child_inumber) == FAIL) {
         printf("Delete: %s\n", name);
 		printf("failed to delete %s from dir %s\n",
-		       child_name, parent_name);
+				child_name, parent_name);
 		return FAIL;
 	}
 
 	if (inode_delete(child_inumber) == FAIL) {
         printf("Delete: %s\n", name);
 		printf("could not delete inode number %d from dir %s\n",
-		       child_inumber, parent_name);
+				child_inumber, parent_name);
 		return FAIL;
 	}
 
@@ -285,6 +285,64 @@ int lookup(char *name) {
 	}
 
 	return current_inumber;
+}
+
+
+int move(char* current_pathname, char* new_pathname){
+	char *current_parent_name, *current_child_name, *new_parent_name, *new_child_name;
+	int new_parent_inumber, current_child_inumber, current_parent_inumber;
+
+	char pathname_copy[MAX_FILE_NAME];
+
+	strcpy(pathname_copy, current_pathname);
+	current_child_inumber = lookup(current_pathname);
+
+	/* checks if there is a directory/file with the current pathname*/
+	if (lookup(current_pathname) == FAIL){
+		printf("failed to move %s to %s, %s doesn't exist\n",
+				current_pathname, new_pathname, current_pathname);
+		return FAIL;
+	}
+
+	/* checks if there isn't a directory/file with the new pathname*/
+	if(lookup(new_pathname) != FAIL){
+		printf("failed to move %s to %s, there is already a %s\n",
+				current_pathname, new_pathname, new_pathname);
+		return FAIL;
+	}
+
+	/* separates child from parent in the current pathname*/
+	split_parent_child_from_path(current_pathname, &current_parent_name,
+			&current_child_name);
+
+	/* separates child from parent in the new pathname*/
+	split_parent_child_from_path(new_pathname, &new_parent_name, &new_child_name);
+
+	/* Example: "m /a /a/a". Prevent loops */
+	if (!strcmp(pathname_copy, new_parent_name)) {
+		printf("failed to move %s to %s, loop would occur\n",
+				current_pathname, new_pathname);
+		return FAIL;		
+	}
+
+	new_parent_inumber = lookup(new_parent_name);
+	current_parent_inumber = lookup(current_parent_name);
+
+	/* removes the current child from the parent in the current pathname*/
+	if (dir_reset_entry(current_parent_inumber, current_child_inumber) == FAIL) {
+		printf("failed to delete %s from dir %s\n",
+				current_child_name, current_parent_name);
+		return FAIL;
+	}
+
+	/* adds the current child to the parent in the new pathname with the new name*/
+	if (dir_add_entry(new_parent_inumber, current_child_inumber, new_child_name) == FAIL) {
+		printf("could not add entry %s in dir %s\n",
+				current_child_name, new_parent_name);
+		return FAIL;
+	}
+
+	return SUCCESS;
 }
 
 
