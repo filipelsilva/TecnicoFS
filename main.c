@@ -48,7 +48,7 @@ FILE* openFile(char* name, char* mode) {
 	FILE* fp = fopen(name, mode);
 	
 	if (fp == NULL) {	
-		fprintf(stderr, "Error: Error: could not open file\n");
+		fprintf(stderr, "Error: could not open file\n");
     	exit(TECNICOFS_ERROR_FILE_NOT_FOUND);
 	}
 	
@@ -180,9 +180,11 @@ void* applyCommands() {
 			case 'c':
 				switch (type[0]) {
 					case 'f':
+						printf("Create file: %s\n", name);
 						create(name, T_FILE);
 						break;
 					case 'd':
+						printf("Create directory: %s\n", name);
 						create(name, T_DIRECTORY);
 						break;
 					default:
@@ -201,6 +203,7 @@ void* applyCommands() {
 				break;
 
 			case 'd':
+				printf("Delete: %s\n", name);
 				delete(name);
 				break;
 			
