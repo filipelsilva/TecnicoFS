@@ -139,7 +139,8 @@ void display_create(char * name, type nodeType){
  * Returns: SUCCESS or FAIL
  */
 int create(char *name, type nodeType){
-	int *vector_inumber = malloc(INODE_TABLE_SIZE * sizeof(int));
+    int vector_inumber[INODE_TABLE_SIZE];
+	//int *vector_inumber = malloc(INODE_TABLE_SIZE * sizeof(int));
 	int i = 0;
 
 	int parent_inumber, child_inumber;
@@ -155,9 +156,6 @@ int create(char *name, type nodeType){
 
 	parent_inumber = lookup(parent_name);
 
-	inode_lock_enable(parent_inumber, 'w');
-	vector_inumber[i++] = parent_inumber;
-
 	if (parent_inumber == FAIL) {
 	    display_create(name, nodeType);
 		printf("failed to create %s, invalid parent dir %s\n",
@@ -166,6 +164,9 @@ int create(char *name, type nodeType){
 		disable_locks(vector_inumber);
 		return FAIL;
 	}
+
+    inode_lock_enable(parent_inumber, 'w');
+    vector_inumber[i++] = parent_inumber;
 
 	inode_get(parent_inumber, &pType, &pdata);
 
@@ -189,8 +190,6 @@ int create(char *name, type nodeType){
 
 	/* create node and add entry to folder that contains new node */
 	child_inumber = inode_create(nodeType);
-	inode_lock_enable(child_inumber, 'w');
-	vector_inumber[i] = child_inumber;
 
 	if (child_inumber == FAIL) {
         display_create(name, nodeType);
@@ -200,6 +199,9 @@ int create(char *name, type nodeType){
 		disable_locks(vector_inumber);		
 		return FAIL;
 	}
+
+    inode_lock_enable(child_inumber, 'w');
+    vector_inumber[i] = child_inumber;
 
 	if (dir_add_entry(parent_inumber, child_inumber, child_name) == FAIL) {
         display_create(name, nodeType);
@@ -211,7 +213,7 @@ int create(char *name, type nodeType){
 	}
 
 	disable_locks(vector_inumber);
-	free(vector_inumber);
+	//free(vector_inumber);
     display_create(name, nodeType);
 	return SUCCESS;
 }
@@ -224,7 +226,8 @@ int create(char *name, type nodeType){
  * Returns: SUCCESS or FAIL
  */
 int delete(char *name){
-	int *vector_inumber = malloc(INODE_TABLE_SIZE * sizeof(int));
+    int vector_inumber[INODE_TABLE_SIZE];
+	//int *vector_inumber = malloc(INODE_TABLE_SIZE * sizeof(int));
 	int i = 0;
 
 	int parent_inumber, child_inumber;
@@ -239,9 +242,6 @@ int delete(char *name){
 	split_parent_child_from_path(name_copy, &parent_name, &child_name);
 
 	parent_inumber = lookup(parent_name);
-
-	inode_lock_enable(parent_inumber, 'w');
-	vector_inumber[i++] = parent_inumber;
 	
 	if (parent_inumber == FAIL) {
         printf("Delete: %s\n", name);
@@ -251,6 +251,9 @@ int delete(char *name){
 		disable_locks(vector_inumber);
 		return FAIL;
 	}
+
+    inode_lock_enable(parent_inumber, 'w');
+    vector_inumber[i++] = parent_inumber;
 
 	inode_get(parent_inumber, &pType, &pdata);
 
@@ -264,8 +267,6 @@ int delete(char *name){
 	}
 
 	child_inumber = lookup_sub_node(child_name, pdata.dirEntries);
-	inode_lock_enable(child_inumber, 'w');
-	vector_inumber[i] = child_inumber;
 
 	if (child_inumber == FAIL) {
         printf("Delete: %s\n", name);
@@ -276,6 +277,8 @@ int delete(char *name){
 		return FAIL;
 	}
 
+    inode_lock_enable(child_inumber, 'w');
+    vector_inumber[i] = child_inumber;
 	inode_get(child_inumber, &cType, &cdata);
 
 	if (cType == T_DIRECTORY && is_dir_empty(cdata.dirEntries) == FAIL) {
@@ -308,7 +311,7 @@ int delete(char *name){
 	}
 
 	disable_locks(vector_inumber);
-	free(vector_inumber);
+	//free(vector_inumber);
     printf("Delete: %s\n", name);
 	return SUCCESS;
 }
@@ -323,7 +326,8 @@ int delete(char *name){
  *     FAIL: otherwise
  */
 int lookup(char *name) {
-	int *vector_inumber = malloc(INODE_TABLE_SIZE * sizeof(int));
+    int vector_inumber[INODE_TABLE_SIZE];
+	//int *vector_inumber = malloc(INODE_TABLE_SIZE * sizeof(int));
 	int i = 0;
 
 	char full_path[MAX_FILE_NAME];
@@ -360,7 +364,7 @@ int lookup(char *name) {
 	}
 	
 	disable_locks(vector_inumber);
-	free(vector_inumber);
+	//free(vector_inumber);
 	return current_inumber;
 }
 

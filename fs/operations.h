@@ -3,6 +3,7 @@
 #include "state.h"
 
 void disable_locks(int vector[]);
+void initialize_vector(int vector[]);
 void init_fs();
 void destroy_fs();
 int is_dir_empty(DirEntry *dirEntries);

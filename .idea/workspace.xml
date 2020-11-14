@@ -34,6 +34,8 @@
   <component name="ChangeListManager">
     <list default="true" id="06682cfd-69a9-4b9e-ab68-bf7f3a2ef9ef" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fs/operations.c" beforeDir="false" afterPath="$PROJECT_DIR$/fs/operations.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fs/operations.h" beforeDir="false" afterPath="$PROJECT_DIR$/fs/operations.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -79,7 +81,7 @@
     <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
   </component>
   <component name="RunManager">
-    <configuration name="TecnicoFS" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="inputs/test2.txt a.out 30" REDIRECT_INPUT="false" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="TecnicoFS" TARGET_NAME="TecnicoFS" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="TecnicoFS" RUN_TARGET_NAME="TecnicoFS">
+    <configuration name="TecnicoFS" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="inputs/test1.txt a.out 5" REDIRECT_INPUT="false" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="TecnicoFS" TARGET_NAME="TecnicoFS" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="TecnicoFS" RUN_TARGET_NAME="TecnicoFS">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
@@ -136,10 +138,10 @@
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="359" y="93" width="1084" height="660" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1605299871886">
+    <state x="359" y="93" width="1084" height="660" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1605353338546">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state x="359" y="93" width="1084" height="660" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1536.816@0.0.1536.816" timestamp="1605299871886" />
+    <state x="359" y="93" width="1084" height="660" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1536.816@0.0.1536.816" timestamp="1605353338546" />
     <state x="432" y="206" width="661" height="400" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1605116866856">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
@@ -148,38 +150,38 @@
       <screen x="0" y="0" width="1536" height="816" />
     </state>
     <state x="596" y="190" key="FileChooserDialogImpl/0.0.1536.816@0.0.1536.816" timestamp="1605351046265" />
-    <state width="1486" height="271" key="GridCell.Tab.0.bottom" timestamp="1605351145468">
+    <state width="1486" height="400" key="GridCell.Tab.0.bottom" timestamp="1605354048175">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state width="1486" height="271" key="GridCell.Tab.0.bottom/0.0.1536.816@0.0.1536.816" timestamp="1605351145468" />
-    <state width="1486" height="271" key="GridCell.Tab.0.center" timestamp="1605351145467">
+    <state width="1486" height="400" key="GridCell.Tab.0.bottom/0.0.1536.816@0.0.1536.816" timestamp="1605354048175" />
+    <state width="1486" height="400" key="GridCell.Tab.0.center" timestamp="1605354048174">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state width="1486" height="271" key="GridCell.Tab.0.center/0.0.1536.816@0.0.1536.816" timestamp="1605351145467" />
-    <state width="1486" height="271" key="GridCell.Tab.0.left" timestamp="1605351145467">
+    <state width="1486" height="400" key="GridCell.Tab.0.center/0.0.1536.816@0.0.1536.816" timestamp="1605354048174" />
+    <state width="1486" height="400" key="GridCell.Tab.0.left" timestamp="1605354048174">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state width="1486" height="271" key="GridCell.Tab.0.left/0.0.1536.816@0.0.1536.816" timestamp="1605351145467" />
-    <state width="1486" height="271" key="GridCell.Tab.0.right" timestamp="1605351145468">
+    <state width="1486" height="400" key="GridCell.Tab.0.left/0.0.1536.816@0.0.1536.816" timestamp="1605354048174" />
+    <state width="1486" height="400" key="GridCell.Tab.0.right" timestamp="1605354048175">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state width="1486" height="271" key="GridCell.Tab.0.right/0.0.1536.816@0.0.1536.816" timestamp="1605351145468" />
-    <state width="1486" height="227" key="GridCell.Tab.1.bottom" timestamp="1605304684993">
+    <state width="1486" height="400" key="GridCell.Tab.0.right/0.0.1536.816@0.0.1536.816" timestamp="1605354048175" />
+    <state width="1486" height="400" key="GridCell.Tab.1.bottom" timestamp="1605354048996">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state width="1486" height="227" key="GridCell.Tab.1.bottom/0.0.1536.816@0.0.1536.816" timestamp="1605304684993" />
-    <state width="1486" height="227" key="GridCell.Tab.1.center" timestamp="1605304684992">
+    <state width="1486" height="400" key="GridCell.Tab.1.bottom/0.0.1536.816@0.0.1536.816" timestamp="1605354048996" />
+    <state width="1486" height="400" key="GridCell.Tab.1.center" timestamp="1605354048996">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state width="1486" height="227" key="GridCell.Tab.1.center/0.0.1536.816@0.0.1536.816" timestamp="1605304684992" />
-    <state width="1486" height="227" key="GridCell.Tab.1.left" timestamp="1605304684992">
+    <state width="1486" height="400" key="GridCell.Tab.1.center/0.0.1536.816@0.0.1536.816" timestamp="1605354048996" />
+    <state width="1486" height="400" key="GridCell.Tab.1.left" timestamp="1605354048995">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state width="1486" height="227" key="GridCell.Tab.1.left/0.0.1536.816@0.0.1536.816" timestamp="1605304684992" />
-    <state width="1486" height="227" key="GridCell.Tab.1.right" timestamp="1605304684992">
+    <state width="1486" height="400" key="GridCell.Tab.1.left/0.0.1536.816@0.0.1536.816" timestamp="1605354048995" />
+    <state width="1486" height="400" key="GridCell.Tab.1.right" timestamp="1605354048996">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
-    <state width="1486" height="227" key="GridCell.Tab.1.right/0.0.1536.816@0.0.1536.816" timestamp="1605304684992" />
+    <state width="1486" height="400" key="GridCell.Tab.1.right/0.0.1536.816@0.0.1536.816" timestamp="1605354048996" />
     <state x="144" y="65" width="1228" height="680" key="MergeDialog" timestamp="1605291401875">
       <screen x="0" y="0" width="1536" height="816" />
     </state>
@@ -196,5 +198,71 @@
       <screen x="0" y="0" width="1536" height="816" />
     </state>
     <state x="120" y="310" width="1295" height="214" key="makefile.clean.confirm.dialog/0.0.1536.816@0.0.1536.816" timestamp="1605116296371" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/fs/operations.c</url>
+          <line>5</line>
+          <option name="timeStamp" value="42" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/fs/operations.c</url>
+          <line>12</line>
+          <option name="timeStamp" value="43" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/fs/operations.c</url>
+          <line>152</line>
+          <option name="timeStamp" value="49" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/fs/operations.c</url>
+          <line>239</line>
+          <option name="timeStamp" value="57" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/fs/operations.c</url>
+          <line>331</line>
+          <option name="timeStamp" value="82" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/fs/operations.c</url>
+          <line>333</line>
+          <option name="timeStamp" value="83" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/fs/operations.c</url>
+          <line>231</line>
+          <option name="timeStamp" value="85" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/fs/operations.c</url>
+          <line>144</line>
+          <option name="timeStamp" value="87" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/fs/operations.c</url>
+          <line>146</line>
+          <option name="timeStamp" value="88" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/fs/operations.c</url>
+          <line>142</line>
+          <option name="timeStamp" value="89" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/fs/operations.c</url>
+          <line>229</line>
+          <option name="timeStamp" value="90" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/fs/operations.c</url>
+          <line>329</line>
+          <option name="timeStamp" value="91" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>
