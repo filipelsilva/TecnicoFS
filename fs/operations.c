@@ -174,6 +174,7 @@ int create(char *name, type nodeType){
 	}
 
     display_create(name, nodeType);
+
 	return SUCCESS;
 }
 
