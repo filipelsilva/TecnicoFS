@@ -9,3 +9,5 @@ inputfile
 outputfile
 outputs
 cmake-build-debug
+.idea
+CMakeLists.txt
