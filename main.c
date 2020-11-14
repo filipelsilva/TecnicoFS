@@ -146,12 +146,13 @@ int processInput() {
                 errorParse();
             }
         }
-    } else{
+    }
+
         /* end of file */
+        printf("flag_producer = 0\n");
         flag_producer = 0;
 
         return 0;
-    }
 
 }
 
@@ -210,8 +211,13 @@ void* fnThread_producer() {
     while(flag_producer) {
         call_vector_lock();
 
-        while (numberCommands == MAX_COMMANDS)
+        while (numberCommands == MAX_COMMANDS) {
+            if (flag_producer == 0) {
+                call_vector_unlock();
+                return NULL;
+            }
             pthread_cond_wait(&vector_producer, &call_vector);
+        }
 
         if (processInput()){
             iproducer++;
@@ -233,17 +239,24 @@ void* fnThread_consumer() {
 
         while (numberCommands == 0) {
             if (flag_producer == 0 && numberCommands == 0) {
-                call_vector_unlock();
                 flag_consumer = 0;
+                call_vector_unlock();
                 return NULL;
             }
             pthread_cond_wait(&vector_consumer, &call_vector);
+
         }
 
         applyCommands();
 
         iconsumer++;
         numberCommands--;
+
+        if (flag_producer == 0 && numberCommands == 0) {
+            flag_consumer = 0;
+            call_vector_unlock();
+            return NULL;
+        }
 
         pthread_cond_signal(&vector_producer);
         call_vector_unlock();
