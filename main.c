@@ -75,17 +75,7 @@ FILE* openFile(char* name, char* mode) {
 }
 
 void insertCommand(char* data) {
-    call_vector_lock();
-
-    while (numberCommands == MAX_COMMANDS)
-        pthread_cond_wait(&vector_producer, &call_vector);
-
     strcpy(inputCommands[iproducer % MAX_COMMANDS], data);
-    iproducer++;
-    numberCommands++;
-
-    pthread_cond_signal(&vector_consumer);
-    call_vector_unlock();
 }
 
 char* removeCommand() {
@@ -94,7 +84,7 @@ char* removeCommand() {
     /* lock acess to call vector */
     call_vector_lock();
 
-	while (numberCommands == 0) 
+	while (numberCommands == 0)
 		pthread_cond_wait(&vector_consumer, &call_vector);
 
 	command = inputCommands[iconsumer % MAX_COMMANDS];
@@ -112,14 +102,14 @@ void errorParse() {
     exit(EXIT_FAILURE);
 }
 
-void processInput() {
+int processInput() {
     char line[MAX_INPUT_SIZE];
 
 	/* Get time after the initialization of the process input */
 	gettimeofday(&tic, NULL);
 
     /* break loop with ^Z or ^D */
-    while (fgets(line, sizeof(line)/sizeof(char), input)) {
+    if (fgets(line, sizeof(line)/sizeof(char), input)) {
         char token, type;
         char name[MAX_INPUT_SIZE];
 
@@ -127,7 +117,7 @@ void processInput() {
 
         /* perform minimal validation */
         if (numTokens < 1) {
-            continue;
+            return 1;
         }
 
         switch (token) {
@@ -135,100 +125,130 @@ void processInput() {
                 if(numTokens != 3)
                     errorParse();
                 insertCommand(line);
-                return;
+                return 1;
             
             case 'l':
                 if(numTokens != 2)
                     errorParse();
                 insertCommand(line);
-                return;
+                return 1;
             
             case 'd':
                 if(numTokens != 2)
                     errorParse();
                 insertCommand(line);
-                return;
+                return 1;
             
             case '#':
-                break;
+                return 0;
             
             default: { /* error */
                 errorParse();
             }
         }
+    } else{
+        /* end of file */
+        flag_producer = 0;
+
+        return 0;
     }
-    /* end of file */
-    flag_producer = 0;
+
 }
 
 void applyCommands() {
-    while (flag_consumer) {
-        if (flag_producer == 0 && numberCommands == 0) {
-            flag_consumer = 0;
+    const char *command = inputCommands[iconsumer % MAX_COMMANDS];
 
-        } else if (numberCommands > 0) {
-            const char *command = removeCommand();
+    if (command == NULL) {
+        return;
+    }
 
-            if (command == NULL) {
-                continue;
-            }
+    char token, type;
+    char name[MAX_INPUT_SIZE];
+    int numTokens = sscanf(command, "%c %s %c", &token, name, &type);
 
-            char token, type;
-            char name[MAX_INPUT_SIZE];
-            int numTokens = sscanf(command, "%c %s %c", &token, name, &type);
+    if (numTokens < 2) {
+        fprintf(stderr, "Error: invalid command in Queue\n");
+        exit(EXIT_FAILURE);
+    }
 
-            if (numTokens < 2) {
-                fprintf(stderr, "Error: invalid command in Queue\n");
-                exit(EXIT_FAILURE);
-            }
-
-            int searchResult;
-            switch (token) {
-                case 'c':
-                    switch (type) {
-                        case 'f':
-                            create(name, T_FILE);
-                            break;
-                        case 'd':
-                            create(name, T_DIRECTORY);
-                            break;
-                        default:
-                            fprintf(stderr, "Error: invalid node type\n");
-                            exit(EXIT_FAILURE);
-                    }
+    int searchResult;
+    switch (token) {
+        case 'c':
+            switch (type) {
+                case 'f':
+                    create(name, T_FILE);
                     break;
-
-                case 'l':
-                    searchResult = lookup(name);
-                    if (searchResult >= 0)
-                        printf("Search: %s found\n", name);
-                    else
-                        printf("Search: %s not found\n", name);
-                    break;
-
                 case 'd':
-                    delete(name);
+                    create(name, T_DIRECTORY);
                     break;
-
-                default: { /* error */
-                    fprintf(stderr, "Error: command to apply\n");
+                default:
+                    fprintf(stderr, "Error: invalid node type\n");
                     exit(EXIT_FAILURE);
-                }
             }
+            break;
+
+        case 'l':
+            searchResult = lookup(name);
+            if (searchResult >= 0)
+                printf("Search: %s found\n", name);
+            else
+                printf("Search: %s not found\n", name);
+            break;
+
+        case 'd':
+            delete(name);
+            break;
+
+        default: { /* error */
+            fprintf(stderr, "Error: command to apply\n");
+            exit(EXIT_FAILURE);
         }
     }
 }
 
 void* fnThread_producer() {
-    while(flag_consumer) {
-        processInput();
+    while(flag_producer) {
+        call_vector_lock();
+
+        while (numberCommands == MAX_COMMANDS)
+            pthread_cond_wait(&vector_producer, &call_vector);
+
+        if (processInput()){
+            iproducer++;
+            numberCommands++;
+
+            pthread_cond_signal(&vector_consumer);
+        }
+
+        call_vector_unlock();
     }
 	return NULL;
 }
 
 /* wrapper function, calling applyCommands */
 void* fnThread_consumer() {
-    applyCommands();
+    while (flag_consumer) {
+        /* lock acess to call vector */
+        call_vector_lock();
+
+        while (numberCommands == 0) {
+            if (flag_producer == 0 && numberCommands == 0) {
+                call_vector_unlock();
+                flag_consumer = 0;
+                return NULL;
+            }
+            pthread_cond_wait(&vector_consumer, &call_vector);
+        }
+
+        applyCommands();
+
+        iconsumer++;
+        numberCommands--;
+
+        pthread_cond_signal(&vector_producer);
+        call_vector_unlock();
+    }
+
 	return NULL;
 }
 
