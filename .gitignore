@@ -5,6 +5,7 @@
 *.swp
 *.out
 *.orig
+*.bak
 tecnicofs
 inputfile
 outputfile
@@ -12,4 +13,3 @@ outputs
 cmake-build-debug
 .idea
 .vscode
-

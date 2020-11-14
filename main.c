@@ -176,7 +176,7 @@ void applyCommands() {
             char token, type;
             char name[MAX_INPUT_SIZE];
             int numTokens = sscanf(command, "%c %s %c", &token, name, &type);
-
+          
             if (numTokens < 2) {
                 fprintf(stderr, "Error: invalid command in Queue\n");
                 exit(EXIT_FAILURE);
@@ -262,7 +262,7 @@ void processPool() {
 		if (pthread_join(tid_consumer[i], NULL)) {
 			fprintf(stderr, "Error: could not join thread\n");
 		}
-    }
+  }
 
 	/* Get time after all has been done */
 	gettimeofday(&toc, NULL);
