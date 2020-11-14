@@ -1,3 +1,0 @@
-/home/sofia/Desktop/TecnicoFS/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/sofia/Desktop/TecnicoFS/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/home/sofia/Desktop/TecnicoFS/cmake-build-debug/CMakeFiles/TecnicoFS.dir
