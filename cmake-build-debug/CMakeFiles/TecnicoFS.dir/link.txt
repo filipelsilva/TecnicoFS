@@ -1,1 +1,0 @@
-/usr/bin/cc  -g -ansi -Wall -Wextra -pthread -lm -g   CMakeFiles/TecnicoFS.dir/fs/operations.c.o CMakeFiles/TecnicoFS.dir/fs/state.c.o CMakeFiles/TecnicoFS.dir/main.c.o  -o TecnicoFS 
