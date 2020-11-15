@@ -75,7 +75,20 @@ FILE* openFile(char* name, char* mode) {
 }
 
 void insertCommand(char* data) {
+    call_vector_lock();
+
+    while (numberCommands == MAX_COMMANDS) {
+        pthread_cond_wait(&vector_producer, &call_vector);
+    }
+
     strcpy(inputCommands[iproducer % MAX_COMMANDS], data);
+
+    iproducer++;
+    numberCommands++;
+
+    pthread_cond_signal(&vector_consumer);
+
+    call_vector_unlock();
 }
 
 char* removeCommand() {
@@ -84,10 +97,17 @@ char* removeCommand() {
     /* lock acess to call vector */
     call_vector_lock();
 
-	while (numberCommands == 0)
-		pthread_cond_wait(&vector_consumer, &call_vector);
+	while (numberCommands == 0) {
+        if (flag_producer == 0) {
+            flag_consumer = 0;
+            call_vector_unlock();
+            return NULL;
+        }
+        pthread_cond_wait(&vector_consumer, &call_vector);
+    }
 
 	command = inputCommands[iconsumer % MAX_COMMANDS];
+
     iconsumer++;
     numberCommands--;
 
@@ -102,7 +122,7 @@ void errorParse() {
     exit(EXIT_FAILURE);
 }
 
-int processInput() {
+void processInput() {
     char line[MAX_INPUT_SIZE];
 
 	/* Get time after the initialization of the process input */
@@ -117,7 +137,7 @@ int processInput() {
 
         /* perform minimal validation */
         if (numTokens < 1) {
-            return 1;
+            return;
         }
 
         switch (token) {
@@ -125,39 +145,35 @@ int processInput() {
                 if(numTokens != 3)
                     errorParse();
                 insertCommand(line);
-                return 1;
+                return;
             
             case 'l':
                 if(numTokens != 2)
                     errorParse();
                 insertCommand(line);
-                return 1;
+                return;
             
             case 'd':
                 if(numTokens != 2)
                     errorParse();
                 insertCommand(line);
-                return 1;
+                return;
             
             case '#':
-                return 0;
+                return;
             
             default: { /* error */
                 errorParse();
             }
         }
-    }
-
+    } else {
         /* end of file */
-        printf("flag_producer = 0\n");
         flag_producer = 0;
-
-        return 0;
-
+    }
 }
 
 void applyCommands() {
-    const char *command = inputCommands[iconsumer % MAX_COMMANDS];
+    const char *command = removeCommand();
 
     if (command == NULL) {
         return;
@@ -209,24 +225,7 @@ void applyCommands() {
 
 void* fnThread_producer() {
     while(flag_producer) {
-        call_vector_lock();
-
-        while (numberCommands == MAX_COMMANDS) {
-            if (flag_producer == 0) {
-                call_vector_unlock();
-                return NULL;
-            }
-            pthread_cond_wait(&vector_producer, &call_vector);
-        }
-
-        if (processInput()){
-            iproducer++;
-            numberCommands++;
-
-            pthread_cond_signal(&vector_consumer);
-        }
-
-        call_vector_unlock();
+        processInput();
     }
 	return NULL;
 }
@@ -234,35 +233,10 @@ void* fnThread_producer() {
 /* wrapper function, calling applyCommands */
 void* fnThread_consumer() {
     while (flag_consumer) {
-        /* lock acess to call vector */
-        call_vector_lock();
-
-        while (numberCommands == 0) {
-            if (flag_producer == 0 && numberCommands == 0) {
-                flag_consumer = 0;
-                call_vector_unlock();
-                return NULL;
-            }
-            pthread_cond_wait(&vector_consumer, &call_vector);
-
-        }
-
         applyCommands();
-
-        iconsumer++;
-        numberCommands--;
-
-        if (flag_producer == 0 && numberCommands == 0) {
-            flag_consumer = 0;
-            call_vector_unlock();
-            return NULL;
-        }
-
-        pthread_cond_signal(&vector_producer);
-        call_vector_unlock();
     }
 
-	return NULL;
+    return NULL;
 }
 
 /* process pool initializer and runner */
