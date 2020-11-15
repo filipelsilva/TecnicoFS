@@ -32,11 +32,11 @@ void argumentParser(int argc, char* argv[]) {
 		fprintf(stderr, "Error: invalid arguments\n");
 		exit(EXIT_FAILURE);
 	}
-	
+
 	inputfile = argv[1];
 	outputfile = argv[2];
 	numberThreads = atoi(argv[3]);
-	
+
 	if (numberThreads < 1) {
 		fprintf(stderr, "Error: invalid number of threads\n");
 		exit(EXIT_FAILURE);
@@ -46,89 +46,89 @@ void argumentParser(int argc, char* argv[]) {
 /* File opening with NULL checker */
 FILE* openFile(char* name, char* mode) {
 	FILE* fp = fopen(name, mode);
-	
+
 	if (fp == NULL) {	
 		fprintf(stderr, "Error: could not open file\n");
-    	exit(TECNICOFS_ERROR_FILE_NOT_FOUND);
+		exit(TECNICOFS_ERROR_FILE_NOT_FOUND);
 	}
-	
+
 	return fp;
 }
 
 int insertCommand(char* data) {
-    if(numberCommands != MAX_COMMANDS) {
-        strcpy(inputCommands[numberCommands++], data);
-        return 1;
-    }
-    return 0;
+	if(numberCommands != MAX_COMMANDS) {
+		strcpy(inputCommands[numberCommands++], data);
+		return 1;
+	}
+	return 0;
 }
 
 char* removeCommand() {
 	if(numberCommands > 0) {
-        numberCommands--;
-        return inputCommands[headQueue++];  
-    }
+		numberCommands--;
+		return inputCommands[headQueue++];  
+	}
 	return NULL;
 }
 
 void errorParse() {
-    fprintf(stderr, "Error: command invalid\n");
-    exit(EXIT_FAILURE);
+	fprintf(stderr, "Error: command invalid\n");
+	exit(EXIT_FAILURE);
 }
 
 void processInput(FILE *file) {
-    char line[MAX_INPUT_SIZE];
+	char line[MAX_INPUT_SIZE];
 
 	/* Get time after the initialization of the process input */
 	gettimeofday(&tic, NULL);
 
-    /* break loop with ^Z or ^D */
-    while (fgets(line, sizeof(line)/sizeof(char), file)) {
-        char token;
-        char name[MAX_INPUT_SIZE], type[MAX_INPUT_SIZE];
-        int numTokens = sscanf(line, "%c %s %s", &token, name, type);
+	/* break loop with ^Z or ^D */
+	while (fgets(line, sizeof(line)/sizeof(char), file)) {
+		char token;
+		char name[MAX_INPUT_SIZE], type[MAX_INPUT_SIZE];
+		int numTokens = sscanf(line, "%c %s %s", &token, name, type);
 
-        /* perform minimal validation */
-        if (numTokens < 1) {
-            continue;
-        }
-        switch (token) {
-            case 'c':
-                if(numTokens != 3)
-                    errorParse();
-                if(insertCommand(line))
-                    break;
-                return;
-            
-            case 'l':
-                if(numTokens != 2)
-                    errorParse();
-                if(insertCommand(line))
-                    break;
-                return;
-            
-            case 'd':
-                if(numTokens != 2)
-                    errorParse();
-                if(insertCommand(line))
-                    break;
-                return;
-			
+		/* perform minimal validation */
+		if (numTokens < 1) {
+			continue;
+		}
+		switch (token) {
+			case 'c':
+				if(numTokens != 3)
+					errorParse();
+				if(insertCommand(line))
+					break;
+				return;
+
+			case 'l':
+				if(numTokens != 2)
+					errorParse();
+				if(insertCommand(line))
+					break;
+				return;
+
+			case 'd':
+				if(numTokens != 2)
+					errorParse();
+				if(insertCommand(line))
+					break;
+				return;
+
 			case 'm':
 				if(numTokens != 3)
 					errorParse();
 				if(insertCommand(line))
-                    break;
-                return;
+					break;
+				return;
 
-            case '#':
-                break;
-            
-            default: { /* error */
-                errorParse();
-            }
-        }
-    }
+			case '#':
+				break;
+
+			default: { /* error */
+						 errorParse();
+					 }
+		}
+	}
 }
 
 /* Call vector -> syncronization lock enabler */
@@ -148,7 +148,7 @@ void call_vector_unlock() {
 
 
 void* applyCommands() {
-   	while (1) {
+	while (1) {
 		/* lock acess to call vector */
 		call_vector_lock();
 
@@ -199,23 +199,23 @@ void* applyCommands() {
 					printf("Search: %s found\n", name);
 				else
 					printf("Search: %s not found\n", name);
-				
+
 				break;
 
 			case 'd':
 				//printf("Delete: %s\n", name);
 				delete(name);
 				break;
-			
+
 			case 'm':
-				printf("Moving: %s to %s\n", name, type);
+				//printf("Moving: %s to %s\n", name, type);
 				move(name, type);
 				break;			
 
 			default: { /* error */
-				fprintf(stderr, "Error: command to apply\n");
-				exit(EXIT_FAILURE);
-			}
+						 fprintf(stderr, "Error: command to apply\n");
+						 exit(EXIT_FAILURE);
+					 }
 		}	
 	}
 	return NULL;
@@ -223,23 +223,23 @@ void* applyCommands() {
 
 /* process pool initializer and runner */
 void processPool() {
-    int i;
+	int i;
 	pthread_t tid[numberThreads];
-   	 
-    for (i = 0; i < numberThreads; i++) {
-        if (pthread_create(&tid[i], NULL, applyCommands, NULL)) {
-            fprintf(stderr, "Error: could not create threads\n");
-            exit(EXIT_FAILURE);
-        }
-    }
-	
 
-    for (i = 0; i < numberThreads; i++) {
+	for (i = 0; i < numberThreads; i++) {
+		if (pthread_create(&tid[i], NULL, applyCommands, NULL)) {
+			fprintf(stderr, "Error: could not create threads\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+
+
+	for (i = 0; i < numberThreads; i++) {
 		if (pthread_join(tid[i], NULL)) {
 			fprintf(stderr, "Error: could not join thread\n");
 			exit(EXIT_FAILURE);
 		}
-    }
+	}
 
 	/* Get time after all has been done */
 	gettimeofday(&toc, NULL);
@@ -252,34 +252,34 @@ void print_elapsed_time() {
 }
 
 int main(int argc, char* argv[]) {
-    /* init filesystem */
-    init_fs();
-	
+	/* init filesystem */
+	init_fs();
+
 	argumentParser(argc, argv);
 
 	/* process input */
-    FILE* input = openFile(inputfile, "r");
+	FILE* input = openFile(inputfile, "r");
 	processInput(input);
 	fclose(input);
-	
+
 	if (pthread_mutex_init(&call_vector, NULL)) {
 		fprintf(stderr, "Error: could not initialize mutex: call_vector\n");
 	}
-  	//sync_locks_init();
+	//sync_locks_init();
 	processPool();
 	//sync_locks_destroy();
 	if (pthread_mutex_destroy(&call_vector)) {
 		fprintf(stderr, "Error: could not destroy mutex: call_vector\n");
 	}
-	
+
 	print_elapsed_time();
 
 	/* print tree */
 	FILE *output = openFile(outputfile, "w");
-    print_tecnicofs_tree(output);
+	print_tecnicofs_tree(output);
 	fclose(output);
-	
-    /* release allocated memory */
-    destroy_fs();
-    exit(EXIT_SUCCESS);
+
+	/* release allocated memory */
+	destroy_fs();
+	exit(EXIT_SUCCESS);
 }
