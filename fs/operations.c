@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 void initialize_vector(int vector[]) {
 	for (int i = INODE_TABLE_SIZE - 1; i >= 0; i--) {
@@ -363,7 +364,7 @@ int lookup(char *name) {
 
 int move(char* current_pathname, char* new_pathname) {
 	int vector_inumber[INODE_TABLE_SIZE];
-	int i = 0;
+	int i = 0, flag = 0;
 
 	int current_parent_inumber, child_inumber, new_parent_inumber;	
 	char *current_parent_name, *current_child_name;
@@ -400,9 +401,18 @@ int move(char* current_pathname, char* new_pathname) {
 
 	new_parent_inumber = lookup(new_parent_name);
 	current_parent_inumber = lookup(current_parent_name);
-
-	inode_lock_enable(current_parent_inumber, 'w');
-	vector_inumber[i++] = current_parent_inumber;
+	
+	while (!flag) {
+		if (inode_lock_try(current_parent_inumber, 'w')) {
+			vector_inumber[i++] = current_parent_inumber;
+			flag = 1;
+		}
+		else {
+			inode_lock_disable(current_parent_inumber);
+			sleep(rand());
+		}
+	}
+	//inode_lock_enable(current_parent_inumber, 'w');
 
 	/* Example: "m /a /a/a". Prevent loops */
 	if (!strcmp(current_pathname_copy, new_parent_name)) {
@@ -424,8 +434,18 @@ int move(char* current_pathname, char* new_pathname) {
 		return FAIL;
 	}
 
-	inode_lock_enable(new_parent_inumber, 'w');
-	vector_inumber[i++] = new_parent_inumber;
+	while (!flag) {
+		if (inode_lock_try(new_parent_inumber, 'w')) {
+			vector_inumber[i++] = new_parent_inumber;
+			flag = 1;
+		}
+		else {
+			inode_lock_disable(new_parent_inumber);
+			sleep(rand());
+		}
+	}
+	//inode_lock_enable(new_parent_inumber, 'w');
+	//vector_inumber[i++] = new_parent_inumber;
 
 	inode_lock_enable(child_inumber, 'w');
 	vector_inumber[i++] = child_inumber;

@@ -32,6 +32,26 @@ void inode_lock_disable(int inumber) {
 	}
 }
 
+int inode_lock_try(int inumber, char mode) {
+	switch (mode) {
+		case 'r':
+			if (pthread_rwlock_tryrdlock(&inode_table[inumber].rwlock)) {
+				fprintf(stderr, "Error: (try) could not lock rwlock (read-only)\n");
+			    return 0;
+			}
+			return 1;
+		
+		case 'w':
+			if (pthread_rwlock_trywrlock(&inode_table[inumber].rwlock)) {
+				fprintf(stderr, "Error: (try) could not lock rwlock (write)\n");
+			    return 0;
+			}
+			return 1;
+		
+		default: return 0;
+	}
+}
+
 /*
  * Sleeps for synchronization testing.
  */
