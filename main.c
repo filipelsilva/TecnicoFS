@@ -92,12 +92,12 @@ void insertCommand(char* data) {
 }
 
 char* removeCommand() {
-	char *command;
+    char *command;
 
     /* lock acess to call vector */
     call_vector_lock();
 
-	while (numberCommands == 0) {
+    while (numberCommands == 0) {
         if (flag_producer == 0) {
             flag_consumer = 0;
             call_vector_unlock();
@@ -106,12 +106,14 @@ char* removeCommand() {
         pthread_cond_wait(&vector_consumer, &call_vector);
     }
 
-	command = inputCommands[iconsumer % MAX_COMMANDS];
+    command = inputCommands[iconsumer % MAX_COMMANDS];
 
     iconsumer++;
     numberCommands--;
 
-	pthread_cond_signal(&vector_producer);
+    if (flag_producer == 1){
+        pthread_cond_signal(&vector_producer);
+    }
 	call_vector_unlock();
 
 	return command;
