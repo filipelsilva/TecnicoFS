@@ -45,6 +45,7 @@ typedef struct inode_t {
 
 void inode_lock_enable(int inumber, char mode);
 void inode_lock_disable(int inumber);
+int inode_lock_try(int inumber, char mode);
 void insert_delay(int cycles);
 void inode_table_init();
 void inode_table_destroy();
