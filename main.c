@@ -107,10 +107,11 @@ char* removeCommand() {
             return NULL;
         }
 
-        else if(flag_consumer == 0){
+        if(flag_consumer == 0){
             call_vector_unlock();
             return NULL;
         }
+
         pthread_cond_wait(&vector_consumer, &call_vector);
     }
 
@@ -180,6 +181,7 @@ void processInput() {
     } else {
         /* end of file */
         flag_producer = 0;
+
     }
 }
 
@@ -190,9 +192,11 @@ void applyCommands() {
         return;
     }
 
+    call_vector_lock();
     char token, type;
     char name[MAX_INPUT_SIZE];
     int numTokens = sscanf(command, "%c %s %c", &token, name, &type);
+    call_vector_unlock();
 
     if (numTokens < 2) {
         fprintf(stderr, "Error: invalid command in Queue\n");
