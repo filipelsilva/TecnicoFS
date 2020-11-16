@@ -403,13 +403,15 @@ int move(char* current_pathname, char* new_pathname) {
 	current_parent_inumber = lookup(current_parent_name);
 	
 	while (!flag) {
-		if (inode_lock_try(current_parent_inumber, 'w')) {
-			vector_inumber[i++] = current_parent_inumber;
-			flag = 1;
-		}
-		else {
-			inode_lock_disable(current_parent_inumber);
-			sleep(rand());
+		if (inode_lock_enable(current_parent_inumber, 'w')) {
+			if (inode_lock_try(current_parent_inumber, 'w')) {
+				vector_inumber[i++] = current_parent_inumber;
+				flag = 1;
+			}
+			else {
+				inode_lock_disable(current_parent_inumber);
+				sleep(rand());
+			}
 		}
 	}
 	//inode_lock_enable(current_parent_inumber, 'w');
@@ -433,22 +435,37 @@ int move(char* current_pathname, char* new_pathname) {
 		disable_locks(vector_inumber);
 		return FAIL;
 	}
-
+	
+	flag = 0;
 	while (!flag) {
-		if (inode_lock_try(new_parent_inumber, 'w')) {
-			vector_inumber[i++] = new_parent_inumber;
-			flag = 1;
-		}
-		else {
-			inode_lock_disable(new_parent_inumber);
-			sleep(rand());
+		if (inode_lock_enable(new_parent_inumber, 'w')) {
+			if (inode_lock_try(new_parent_inumber, 'w')) {
+				vector_inumber[i++] =(new_parent_inumber);
+				flag = 1;
+			}
+			else {
+				inode_lock_disable(new_parent_inumber);
+				sleep(rand());
+			}
 		}
 	}
 	//inode_lock_enable(new_parent_inumber, 'w');
 	//vector_inumber[i++] = new_parent_inumber;
-
-	inode_lock_enable(child_inumber, 'w');
-	vector_inumber[i++] = child_inumber;
+	flag = 0;
+	while (!flag) {
+		if (inode_lock_enable(child_inumber, 'w')) {
+			if (inode_lock_try(child_inumber, 'w')) {
+				vector_inumber[i++] = child_inumber;
+				flag = 1;
+			}
+			else {
+				inode_lock_disable(child_inumber);
+				sleep(rand());
+			}
+		}
+	}
+	//inode_lock_enable(child_inumber, 'w');
+	//vector_inumber[i++] = child_inumber;
 
 	/* adds the current child to the parent in the new pathname with the new name*/
 	if (dir_add_entry(new_parent_inumber, child_inumber, new_child_name) == FAIL) {
