@@ -78,6 +78,9 @@ void insertCommand(char* data) {
     call_vector_lock();
 
     while (numberCommands == MAX_COMMANDS) {
+        if (flag_producer == 0){
+            call_vector_unlock();
+        }
         pthread_cond_wait(&vector_producer, &call_vector);
     }
 
@@ -103,6 +106,11 @@ char* removeCommand() {
             call_vector_unlock();
             return NULL;
         }
+
+        else if(flag_consumer == 0){
+            call_vector_unlock();
+            return NULL;
+        }
         pthread_cond_wait(&vector_consumer, &call_vector);
     }
 
@@ -114,6 +122,7 @@ char* removeCommand() {
     if (flag_producer == 1){
         pthread_cond_signal(&vector_producer);
     }
+
 	call_vector_unlock();
 
 	return command;
