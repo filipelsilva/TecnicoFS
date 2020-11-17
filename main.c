@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include "fs/operations.h"
 
-#define MAX_COMMANDS 150000
+#define MAX_COMMANDS 10
 #define MAX_INPUT_SIZE 100
 
 int numberThreads = 0;
@@ -19,6 +19,14 @@ int headQueue = 0;
 
 /* Syncronization lock */
 pthread_mutex_t call_vector;
+
+/* Conditional syncronization */
+pthread_cond_t producer, consumer;
+int prod_num = 0, cons_num = 0;
+int flag = 1;
+
+/* Inputfile */
+FILE* input; 
 
 /* Filenames for the inputfile and outputfile */
 char* outputfile = NULL;
@@ -55,87 +63,13 @@ FILE* openFile(char* name, char* mode) {
 	return fp;
 }
 
-int insertCommand(char* data) {
-	if(numberCommands != MAX_COMMANDS) {
-		strcpy(inputCommands[numberCommands++], data);
-		return 1;
-	}
-	return 0;
-}
-
-char* removeCommand() {
-	if(numberCommands > 0) {
-		numberCommands--;
-		return inputCommands[headQueue++];  
-	}
-	return NULL;
-}
-
-void errorParse() {
-	fprintf(stderr, "Error: command invalid\n");
-	exit(EXIT_FAILURE);
-}
-
-void processInput(FILE *file) {
-	char line[MAX_INPUT_SIZE];
-
-	/* Get time after the initialization of the process input */
-	gettimeofday(&tic, NULL);
-
-	/* break loop with ^Z or ^D */
-	while (fgets(line, sizeof(line)/sizeof(char), file)) {
-		char token;
-		char name[MAX_INPUT_SIZE], type[MAX_INPUT_SIZE];
-		int numTokens = sscanf(line, "%c %s %s", &token, name, type);
-
-		/* perform minimal validation */
-		if (numTokens < 1) {
-			continue;
-		}
-		switch (token) {
-			case 'c':
-				if(numTokens != 3)
-					errorParse();
-				if(insertCommand(line))
-					break;
-				return;
-
-			case 'l':
-				if(numTokens != 2)
-					errorParse();
-				if(insertCommand(line))
-					break;
-				return;
-
-			case 'd':
-				if(numTokens != 2)
-					errorParse();
-				if(insertCommand(line))
-					break;
-				return;
-
-			case 'm':
-				if(numTokens != 3)
-					errorParse();
-				if(insertCommand(line))
-					break;
-				return;
-
-			case '#':
-				break;
-
-			default: { /* error */
-						 errorParse();
-					 }
-		}
-	}
-}
 
 /* Call vector -> syncronization lock enabler */
 void call_vector_lock() {
 	if (pthread_mutex_lock(&call_vector)) {
 		fprintf(stderr, "Error: could not lock mutex: call_vector\n");
 	}
+	//printf("UNLOCK\n");
 }
 
 
@@ -144,26 +78,118 @@ void call_vector_unlock() {
 	if (pthread_mutex_unlock(&call_vector)) {
 		fprintf(stderr, "Error: could not unlock mutex: call_vector\n");
 	}
+	//printf("LOCK\n");
+}
+
+void insertCommand(char* data) {
+	call_vector_lock();
+	
+	while (numberCommands == MAX_COMMANDS) {
+		pthread_cond_wait(&producer, &call_vector);
+	}
+
+	strcpy(inputCommands[prod_num % MAX_COMMANDS], data);
+	prod_num++;
+	//printf("%s\n", data);
+	numberCommands++;
+	pthread_cond_signal(&consumer);
+	call_vector_unlock();
+}
+
+char* removeCommand() {
+	char* command;
+	call_vector_lock();
+
+	while (numberCommands == 0) {
+		if (flag) {
+			pthread_cond_wait(&consumer, &call_vector);
+		} else {
+			call_vector_unlock();
+			return NULL;
+		}
+	}
+	
+	command = inputCommands[cons_num % MAX_COMMANDS];
+	cons_num++;
+	numberCommands--;
+	pthread_cond_signal(&producer);
+	call_vector_unlock();
+	return command;
+}
+
+void errorParse() {
+	fprintf(stderr, "Error: command invalid\n");
+	exit(EXIT_FAILURE);
+}
+
+void* processInput() {
+	char line[MAX_INPUT_SIZE];
+	/* Get time after the initialization of the process input */
+	gettimeofday(&tic, NULL);
+
+	/* break loop with ^Z or ^D */
+	while (flag) {
+		if (fgets(line, sizeof(line)/sizeof(char), input)) {
+			char token;
+			char name[MAX_INPUT_SIZE], type[MAX_INPUT_SIZE];
+			int numTokens = sscanf(line, "%c %s %s", &token, name, type);
+
+			/* perform minimal validation */
+			if (numTokens < 1) {
+				continue;
+			}
+			switch (token) {
+				case 'c':
+					if(numTokens != 3)
+						errorParse();
+					insertCommand(line);
+					break;
+
+				case 'l':
+					if(numTokens != 2)
+						errorParse();
+					insertCommand(line);
+					break;
+
+				case 'd':
+					if(numTokens != 2)
+						errorParse();
+					insertCommand(line);
+					break;
+
+				case 'm':
+					if(numTokens != 3)
+						errorParse();
+					insertCommand(line);
+					break;
+
+				case '#':
+					break;
+
+				default: { /* error */
+							errorParse();
+						}
+			}
+		} else {
+			flag = 0;
+		}
+		//printf("%d %s\n", flag, line);
+	}
+	return NULL;
 }
 
 
 void* applyCommands() {
 	while (1) {
 		/* lock acess to call vector */
-		call_vector_lock();
-
-		if (numberCommands <= 0) {
-			call_vector_unlock();
-			break;
-		}
 
 		const char* command = removeCommand();
 
+		//printf("chega aqui? %s\n", command);
 		/* unlock acess to call vector */
-		call_vector_unlock();
 
 		if (command == NULL) {
-			continue;
+			return NULL;
 		}
 
 		char token;
@@ -224,15 +250,23 @@ void* applyCommands() {
 /* process pool initializer and runner */
 void processPool() {
 	int i;
-	pthread_t tid[numberThreads];
-
+	pthread_t tid_producer, tid[numberThreads]; //OU numberThreads - 1????
+	
+	if (pthread_create(&tid_producer, NULL, processInput, NULL)){
+        fprintf(stderr, "Error: could not create threads\n");
+        exit(EXIT_FAILURE);
+    }
+	
 	for (i = 0; i < numberThreads; i++) {
 		if (pthread_create(&tid[i], NULL, applyCommands, NULL)) {
 			fprintf(stderr, "Error: could not create threads\n");
 			exit(EXIT_FAILURE);
 		}
 	}
-
+	
+	if (pthread_join(tid_producer, NULL)) {
+		fprintf(stderr, "Error: could not join thread\n");
+	}
 
 	for (i = 0; i < numberThreads; i++) {
 		if (pthread_join(tid[i], NULL)) {
@@ -257,17 +291,29 @@ int main(int argc, char* argv[]) {
 
 	argumentParser(argc, argv);
 
-	/* process input */
-	FILE* input = openFile(inputfile, "r");
-	processInput(input);
-	fclose(input);
-
 	if (pthread_mutex_init(&call_vector, NULL)) {
 		fprintf(stderr, "Error: could not initialize mutex: call_vector\n");
 	}
-	//sync_locks_init();
+	if (pthread_cond_init(&producer, NULL)) {
+		fprintf(stderr, "Error: could not initialize condition: producer\n");
+	}
+
+	if (pthread_cond_init(&consumer, NULL)) {
+		fprintf(stderr, "Error: could not initialize condition: consumer\n");
+	}
+	
+	input = openFile(inputfile, "r");
 	processPool();
-	//sync_locks_destroy();
+	fclose(input);
+
+	if (pthread_cond_destroy(&consumer)) {
+		fprintf(stderr, "Error: could not destroy mutex: consumer\n");
+	}
+
+	if (pthread_cond_destroy(&producer)) {
+		fprintf(stderr, "Error: could not destroy condition: producer\n");
+	}
+
 	if (pthread_mutex_destroy(&call_vector)) {
 		fprintf(stderr, "Error: could not destroy mutex: call_vector\n");
 	}
