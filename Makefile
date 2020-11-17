@@ -8,7 +8,7 @@ LDFLAGS=-lm
 
 # A phony target is one that is not really the name of a file
 # https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html
-.PHONY: all clean run
+.PHONY: all clean run zip
 
 all: tecnicofs
 
@@ -23,6 +23,9 @@ fs/operations.o: fs/operations.c fs/operations.h fs/state.h tecnicofs-api-consta
 
 main.o: main.c fs/operations.h fs/state.h tecnicofs-api-constants.h
 	$(CC) $(CFLAGS) -o main.o -c main.c
+
+zip:
+	zip entrega.zip -r main.c Makefile tecnicofs-api-constants.h runTests.sh README.md fs inputs
 
 clean:
 	@echo Cleaning...
