@@ -192,9 +192,11 @@ void* applyCommands() {
 			return NULL;
 		}
 
+		call_vector_lock();
 		char token;
 		char name[MAX_INPUT_SIZE], type[MAX_INPUT_SIZE];
 		int numTokens = sscanf(command, "%c %s %s", &token, name, type);
+		call_vector_unlock();
 
 		if (numTokens < 2) {
 			fprintf(stderr, "Error: invalid command in Queue\n");
