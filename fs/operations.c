@@ -418,7 +418,6 @@ int move(char* current_pathname, char* new_pathname) {
 	char current_pathname_copy[MAX_FILE_NAME];
 	char new_pathname_copy[MAX_FILE_NAME];
 
-
     initialize_vector(vector_inumber, 3);
 	strcpy(new_pathname_copy, new_pathname);
 	strcpy(current_pathname_copy, current_pathname);
