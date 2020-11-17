@@ -363,48 +363,48 @@ int lookup(char *name) {
 }
 
 void sort_vector(int vector[3], int a, int b, int c){
-    if (a < b){
-        if (a < c) {
-            if (c < b) {
-                vector[0] = a;
-                vector[1] = c;
-                vector[2] = b;
-            }
+	if (a < b){
+		if (a < c) {
+			if (c < b) {
+				vector[0] = a;
+				vector[1] = c;
+				vector[2] = b;
+			}
 
-            else{
-                vector[0] = a;
-                vector[1] = b;
-                vector[2] = c;
-            }
-        }
+			else{
+				vector[0] = a;
+				vector[1] = b;
+				vector[2] = c;
+			}
+		}
 
-        else{
-            vector[0] = c;
-            vector[1] = a;
-            vector[2] = b;
-        }
-    }
+		else{
+			vector[0] = c;
+			vector[1] = a;
+			vector[2] = b;
+		}
+	}
 
-    else{ /* b < a */
-        if(a < c){
-            vector[0] = b;
-            vector[1] = a;
-            vector[2] = c;
-        }
-        else{ /* c < a*/
-            if(c < b){
-                vector[0] = c;
-                vector[1] = b;
-                vector[2] = a;
-            }
+	else{ /* b < a */
+		if(a < c){
+			vector[0] = b;
+			vector[1] = a;
+			vector[2] = c;
+		}
+		else{ /* c < a*/
+			if(c < b){
+				vector[0] = c;
+				vector[1] = b;
+				vector[2] = a;
+			}
 
-            else{ /* b < c*/
-                vector[0] = b;
-                vector[1] = c;
-                vector[2] = a;
-            }
-        }
-    }
+			else{ /* b < c*/
+				vector[0] = b;
+				vector[1] = c;
+				vector[2] = a;
+			}
+		}
+	}
 }
 
 
@@ -418,7 +418,7 @@ int move(char* current_pathname, char* new_pathname) {
 	char current_pathname_copy[MAX_FILE_NAME];
 	char new_pathname_copy[MAX_FILE_NAME];
 
-    initialize_vector(vector_inumber, 3);
+	initialize_vector(vector_inumber, 3);
 	strcpy(new_pathname_copy, new_pathname);
 	strcpy(current_pathname_copy, current_pathname);
 	child_inumber = lookup(current_pathname);
@@ -459,39 +459,39 @@ int move(char* current_pathname, char* new_pathname) {
 		return FAIL;
 	}
 
-    /* Sorting the vector_inumber by ascending order*/
-    sort_vector(vector_inumber, new_parent_inumber, current_parent_inumber, child_inumber);
+	/* Sorting the vector_inumber by ascending order*/
+	sort_vector(vector_inumber, new_parent_inumber, current_parent_inumber, child_inumber);
 
-    /* Locking the inodes by ascending order*/
-    while (!flag) {
-        max = constant * count;
+	/* Locking the inodes by ascending order*/
+	while (!flag) {
+		max = constant * count;
 
-        if (inode_lock_try(vector_inumber[0], 'w')) {
-            if (inode_lock_try(vector_inumber[1], 'w')) {
-                if (inode_lock_try(vector_inumber[2], 'w'))
-                    /* can lock all three inodes*/
-                    flag = 1;
-                else{
-                    count ++;
-                    inode_lock_disable(vector_inumber[1]);
-                    inode_lock_disable(vector_inumber[0]);
-                    /* wait for a random number of seconds before trying to lock again*/
-                    sleep((rand() % (max + 1)));
-                }
-            }
-            else {
-                count ++;
-                inode_lock_disable(vector_inumber[0]);
-                /* wait for a random number of seconds before trying to lock again*/
-                sleep((rand() % (max + 1)));
-            }
-        }
-        else{
-            count ++;
-            /* wait for a random number of seconds before trying to lock again*/
-            sleep((rand() % (max + 1)));
-        }
-    }
+		if (inode_lock_try(vector_inumber[0], 'w')) {
+			if (inode_lock_try(vector_inumber[1], 'w')) {
+				if (inode_lock_try(vector_inumber[2], 'w'))
+					/* can lock all three inodes*/
+					flag = 1;
+				else{
+					count ++;
+					inode_lock_disable(vector_inumber[1]);
+					inode_lock_disable(vector_inumber[0]);
+					/* wait for a random number of seconds before trying to lock again*/
+					sleep((rand() % (max + 1)));
+				}
+			}
+			else {
+				count ++;
+				inode_lock_disable(vector_inumber[0]);
+				/* wait for a random number of seconds before trying to lock again*/
+				sleep((rand() % (max + 1)));
+			}
+		}
+		else{
+			count ++;
+			/* wait for a random number of seconds before trying to lock again*/
+			sleep((rand() % (max + 1)));
+		}
+	}
 
 	/* removes the current child from the parent in the current pathname*/
 	if (dir_reset_entry(current_parent_inumber, child_inumber) == FAIL) {

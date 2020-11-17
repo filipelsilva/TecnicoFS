@@ -9,45 +9,45 @@
 inode_t inode_table[INODE_TABLE_SIZE];
 
 void inode_lock_enable(int inumber, char mode) {
-	switch (mode) {
-		case 'r':
-			if (pthread_rwlock_rdlock(&inode_table[inumber].rwlock)) {
-				fprintf(stderr, "Error: (try) could not lock rwlock (read-only)\n");
-			}
-		    break;  
-		
-		case 'w':
-			if (pthread_rwlock_wrlock(&inode_table[inumber].rwlock)) {
-				fprintf(stderr, "Error: (try) could not lock rwlock (write)\n");
-			}
-		    break;  
-		
-		default: break; 
-	}
+    switch (mode) {
+        case 'r':
+            if (pthread_rwlock_rdlock(&inode_table[inumber].rwlock)) {
+                fprintf(stderr, "Error: (try) could not lock rwlock (read-only)\n");
+            }
+            break;  
+
+        case 'w':
+            if (pthread_rwlock_wrlock(&inode_table[inumber].rwlock)) {
+                fprintf(stderr, "Error: (try) could not lock rwlock (write)\n");
+            }
+            break;  
+
+        default: break; 
+    }
 }
 
 void inode_lock_disable(int inumber) {
-	if (pthread_rwlock_unlock(&inode_table[inumber].rwlock)) {
-		fprintf(stderr, "Error: could not unlock rwlock\n");
-	}
+    if (pthread_rwlock_unlock(&inode_table[inumber].rwlock)) {
+        fprintf(stderr, "Error: could not unlock rwlock\n");
+    }
 }
 
 int inode_lock_try(int inumber, char mode) {
-	switch (mode) {
-		case 'r':
-			if (pthread_rwlock_tryrdlock(&inode_table[inumber].rwlock)) {
-			    return 0;
-			}
-			return 1;
-		
-		case 'w':
-			if (pthread_rwlock_trywrlock(&inode_table[inumber].rwlock)) {
-			    return 0;
-			}
-			return 1;
-		
-		default: return 0;
-	}
+    switch (mode) {
+        case 'r':
+            if (pthread_rwlock_tryrdlock(&inode_table[inumber].rwlock)) {
+                return 0;
+            }
+            return 1;
+
+        case 'w':
+            if (pthread_rwlock_trywrlock(&inode_table[inumber].rwlock)) {
+                return 0;
+            }
+            return 1;
+
+        default: return 0;
+    }
 }
 
 /*
@@ -66,10 +66,10 @@ void inode_table_init() {
         inode_table[i].nodeType = T_NONE;
         inode_table[i].data.dirEntries = NULL;
         inode_table[i].data.fileContents = NULL;
-		if (pthread_rwlock_init(&inode_table[i].rwlock, NULL)) {
-			fprintf(stderr, "Error: could not initialize mutex: call_vector\n");
-		}
-	}
+        if (pthread_rwlock_init(&inode_table[i].rwlock, NULL)) {
+            fprintf(stderr, "Error: could not initialize mutex: call_vector\n");
+        }
+    }
 }
 
 /*
@@ -81,12 +81,12 @@ void inode_table_destroy() {
         if (inode_table[i].nodeType != T_NONE) {
             /* as data is an union, the same pointer is used for both dirEntries and fileContents */
             /* just release one of them */
-			if (inode_table[i].data.dirEntries)
-				free(inode_table[i].data.dirEntries);
-			if (pthread_rwlock_destroy(&inode_table[i].rwlock)) {
-				fprintf(stderr, "Error: could not destroy rwlock\n");
-			}
-		}
+            if (inode_table[i].data.dirEntries)
+                free(inode_table[i].data.dirEntries);
+            if (pthread_rwlock_destroy(&inode_table[i].rwlock)) {
+                fprintf(stderr, "Error: could not destroy rwlock\n");
+            }
+        }
     }
 }
 
@@ -109,7 +109,7 @@ int inode_create(type nType) {
             if (nType == T_DIRECTORY) {
                 /* Initializes entry table */
                 inode_table[inumber].data.dirEntries = malloc(sizeof(DirEntry) * MAX_DIR_ENTRIES);
-                
+
                 for (int i = 0; i < MAX_DIR_ENTRIES; i++) {
                     inode_table[inumber].data.dirEntries[i].inumber = FREE_INODE;
                 }
@@ -199,7 +199,7 @@ int dir_reset_entry(int inumber, int sub_inumber) {
         return FAIL;
     }
 
-    
+
     for (int i = 0; i < MAX_DIR_ENTRIES; i++) {
         if (inode_table[inumber].data.dirEntries[i].inumber == sub_inumber) {
             inode_table[inumber].data.dirEntries[i].inumber = FREE_INODE;
@@ -240,10 +240,10 @@ int dir_add_entry(int inumber, int sub_inumber, char *sub_name) {
 
     if (strlen(sub_name) == 0 ) {
         printf("inode_add_entry: \
-               entry name must be non-empty\n");
+                entry name must be non-empty\n");
         return FAIL;
     }
-    
+
     for (int i = 0; i < MAX_DIR_ENTRIES; i++) {
         if (inode_table[inumber].data.dirEntries[i].inumber == FREE_INODE) {
             inode_table[inumber].data.dirEntries[i].inumber = sub_inumber;
