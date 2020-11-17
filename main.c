@@ -83,7 +83,7 @@ void call_vector_unlock() {
 
 void insertCommand(char* data) {
 	call_vector_lock();
-	
+
 	while (numberCommands == MAX_COMMANDS) {
 		pthread_cond_wait(&producer, &call_vector);
 	}
@@ -92,7 +92,7 @@ void insertCommand(char* data) {
 	prod_num++;
 	//printf("%s\n", data);
 	numberCommands++;
-	
+
 	pthread_cond_signal(&consumer);
 	call_vector_unlock();
 }
@@ -109,14 +109,14 @@ char* removeCommand() {
 			return NULL;
 		}
 	}
-	
+
 	command = inputCommands[cons_num % MAX_COMMANDS];
 	cons_num++;
 	numberCommands--;
 
 	pthread_cond_signal(&producer);
 	call_vector_unlock();
-	
+
 	return command;
 }
 
@@ -170,8 +170,8 @@ void* processInput() {
 					break;
 
 				default: { /* error */
-							errorParse();
-						}
+							 errorParse();
+						 }
 			}
 		} else {
 			flag = 0;
@@ -256,19 +256,19 @@ void* applyCommands() {
 void processPool() {
 	int i;
 	pthread_t tid_producer, tid[numberThreads]; //OU numberThreads - 1????
-	
+
 	if (pthread_create(&tid_producer, NULL, processInput, NULL)){
-        fprintf(stderr, "Error: could not create threads\n");
-        exit(EXIT_FAILURE);
-    }
-	
+		fprintf(stderr, "Error: could not create threads\n");
+		exit(EXIT_FAILURE);
+	}
+
 	for (i = 0; i < numberThreads; i++) {
 		if (pthread_create(&tid[i], NULL, applyCommands, NULL)) {
 			fprintf(stderr, "Error: could not create threads\n");
 			exit(EXIT_FAILURE);
 		}
 	}
-	
+
 	if (pthread_join(tid_producer, NULL)) {
 		fprintf(stderr, "Error: could not join thread\n");
 	}
@@ -306,7 +306,7 @@ int main(int argc, char* argv[]) {
 	if (pthread_cond_init(&consumer, NULL)) {
 		fprintf(stderr, "Error: could not initialize condition: consumer\n");
 	}
-	
+
 	input = openFile(inputfile, "r");
 	processPool();
 	fclose(input);
