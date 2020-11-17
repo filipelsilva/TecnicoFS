@@ -4,14 +4,14 @@
 #include <string.h>
 #include <unistd.h>
 
-void initialize_vector(int vector[]) {
-	for (int i = INODE_TABLE_SIZE - 1; i >= 0; i--) {
+void initialize_vector(int vector[], int limit) {
+	for (int i = limit - 1; i >= 0; i--) {
 		vector[i] = FREE_INODE;
 	}
 }
 
-void disable_locks(int vector[]) {
-	for (int i = INODE_TABLE_SIZE - 1; i >= 0; i--) {
+void disable_locks(int vector[], int limit) {
+	for (int i = limit - 1; i >= 0; i--) {
 		if (vector[i] != FREE_INODE) {
 			//////printf("Trying to unlock %d\n", i);
 			inode_lock_disable(vector[i]);
@@ -19,6 +19,7 @@ void disable_locks(int vector[]) {
 		}
 	}
 }
+
 
 /* Given a path, fills pointers with strings for the parent path and child
  * file name
@@ -149,7 +150,7 @@ int create(char *name, type nodeType){
 	type pType;
 	union Data pdata;
 
-	initialize_vector(vector_inumber);
+	initialize_vector(vector_inumber, INODE_TABLE_SIZE);
 
 	strcpy(name_copy, name);
 	split_parent_child_from_path(name_copy, &parent_name, &child_name);
@@ -173,7 +174,7 @@ int create(char *name, type nodeType){
 		printf("failed to create %s, parent %s is not a dir\n",
 				name, parent_name);
 
-		disable_locks(vector_inumber);		
+		disable_locks(vector_inumber, INODE_TABLE_SIZE);
 		return FAIL;
 	}
 
@@ -182,7 +183,7 @@ int create(char *name, type nodeType){
 		printf("failed to create %s, already exists in dir %s\n",
 				child_name, parent_name);
 
-		disable_locks(vector_inumber);  
+		disable_locks(vector_inumber, INODE_TABLE_SIZE);
 		return FAIL;
 	}
 
@@ -194,7 +195,7 @@ int create(char *name, type nodeType){
 		printf("failed to create %s in  %s, couldn't allocate inode\n",
 				child_name, parent_name);
 
-		disable_locks(vector_inumber);		
+		disable_locks(vector_inumber, INODE_TABLE_SIZE);
 		return FAIL;
 	}
 
@@ -206,11 +207,11 @@ int create(char *name, type nodeType){
 		printf("could not add entry %s in dir %s\n",
 				child_name, parent_name);
 
-		disable_locks(vector_inumber);
+		disable_locks(vector_inumber, INODE_TABLE_SIZE);
 		return FAIL;
 	}
 
-	disable_locks(vector_inumber);
+	disable_locks(vector_inumber, INODE_TABLE_SIZE);
 	display_create(name, nodeType);
 	return SUCCESS;
 }
@@ -232,7 +233,7 @@ int delete(char *name){
 	type pType, cType;
 	union Data pdata, cdata;
 
-	initialize_vector(vector_inumber);
+	initialize_vector(vector_inumber, INODE_TABLE_SIZE);
 
 	strcpy(name_copy, name);
 	split_parent_child_from_path(name_copy, &parent_name, &child_name);
@@ -257,7 +258,7 @@ int delete(char *name){
 		printf("failed to delete %s, parent %s is not a dir\n",
 				child_name, parent_name);
 
-		disable_locks(vector_inumber);	  		
+		disable_locks(vector_inumber, INODE_TABLE_SIZE);
 		return FAIL;
 	}
 
@@ -268,7 +269,7 @@ int delete(char *name){
 		printf("could not delete %s, does not exist in dir %s\n",
 				name, parent_name);
 
-		disable_locks(vector_inumber);	
+		disable_locks(vector_inumber, INODE_TABLE_SIZE);
 		return FAIL;
 	}
 
@@ -281,7 +282,7 @@ int delete(char *name){
 		printf("could not delete %s: is a directory and not empty\n",
 				name);
 
-		disable_locks(vector_inumber);
+		disable_locks(vector_inumber, INODE_TABLE_SIZE);
 		return FAIL;
 	}
 
@@ -291,7 +292,7 @@ int delete(char *name){
 		printf("failed to delete %s from dir %s\n",
 				child_name, parent_name);
 
-		disable_locks(vector_inumber);
+		disable_locks(vector_inumber, INODE_TABLE_SIZE);
 		return FAIL;
 	}
 
@@ -301,11 +302,11 @@ int delete(char *name){
 				child_inumber, parent_name);
 
 		vector_inumber[child_inumber] = FREE_INODE;
-		disable_locks(vector_inumber);
+		disable_locks(vector_inumber, INODE_TABLE_SIZE);
 		return FAIL;
 	}
 
-	disable_locks(vector_inumber);
+	disable_locks(vector_inumber, INODE_TABLE_SIZE);
 	printf("Delete: %s\n", name);
 	return SUCCESS;
 }
@@ -327,7 +328,7 @@ int lookup(char *name) {
 	char delim[] = "/";
 	char *saveptr;
 
-	initialize_vector(vector_inumber);
+	initialize_vector(vector_inumber, INODE_TABLE_SIZE);
 
 	strcpy(full_path, name);
 
@@ -357,14 +358,59 @@ int lookup(char *name) {
 		path = strtok_r(NULL, delim, &saveptr);
 	}
 
-	disable_locks(vector_inumber);
+	disable_locks(vector_inumber, INODE_TABLE_SIZE);
 	return current_inumber;
+}
+
+void sort_vector(int vector[3], int a, int b, int c){
+    if (a < b){
+        if (a < c) {
+            if (c < b) {
+                vector[0] = a;
+                vector[1] = c;
+                vector[2] = b;
+            }
+
+            else{
+                vector[0] = a;
+                vector[1] = b;
+                vector[2] = c;
+            }
+        }
+
+        else{
+            vector[0] = c;
+            vector[1] = a;
+            vector[2] = b;
+        }
+    }
+
+    else{ /* b < a */
+        if(a < c){
+            vector[0] = b;
+            vector[1] = a;
+            vector[2] = c;
+        }
+        else{ /* c < a*/
+            if(c < b){
+                vector[0] = c;
+                vector[1] = b;
+                vector[2] = a;
+            }
+
+            else{ /* b < c*/
+                vector[0] = b;
+                vector[1] = c;
+                vector[2] = a;
+            }
+        }
+    }
 }
 
 
 int move(char* current_pathname, char* new_pathname) {
-	int vector_inumber[INODE_TABLE_SIZE];
-	int i = 0, flag = 0;
+	int vector_inumber[3];
+	int count = 0, constant = 1, max, flag = 0;
 
 	int current_parent_inumber, child_inumber, new_parent_inumber;	
 	char *current_parent_name, *current_child_name;
@@ -372,6 +418,8 @@ int move(char* current_pathname, char* new_pathname) {
 	char current_pathname_copy[MAX_FILE_NAME];
 	char new_pathname_copy[MAX_FILE_NAME];
 
+
+    initialize_vector(vector_inumber, 3);
 	strcpy(new_pathname_copy, new_pathname);
 	strcpy(current_pathname_copy, current_pathname);
 	child_inumber = lookup(current_pathname);
@@ -401,20 +449,6 @@ int move(char* current_pathname, char* new_pathname) {
 
 	new_parent_inumber = lookup(new_parent_name);
 	current_parent_inumber = lookup(current_parent_name);
-	
-	while (!flag) {
-		if (inode_lock_enable(current_parent_inumber, 'w')) {
-			if (inode_lock_try(current_parent_inumber, 'w')) {
-				vector_inumber[i++] = current_parent_inumber;
-				flag = 1;
-			}
-			else {
-				inode_lock_disable(current_parent_inumber);
-				sleep(rand());
-			}
-		}
-	}
-	//inode_lock_enable(current_parent_inumber, 'w');
 
 	/* Example: "m /a /a/a". Prevent loops */
 	if (!strcmp(current_pathname_copy, new_parent_name)) {
@@ -422,9 +456,43 @@ int move(char* current_pathname, char* new_pathname) {
 		printf("failed to move %s to %s, loop would occur\n",
 				current_pathname, new_pathname);
 
-		disable_locks(vector_inumber);
+		disable_locks(vector_inumber, 3);
 		return FAIL;
 	}
+
+    /* Sorting the vector_inumber by ascending order*/
+    sort_vector(vector_inumber, new_parent_inumber, current_parent_inumber, child_inumber);
+
+    /* Locking the inodes by ascending order*/
+    while (!flag) {
+        max = constant * count;
+
+        if (inode_lock_try(vector_inumber[0], 'w')) {
+            if (inode_lock_try(vector_inumber[1], 'w')) {
+                if (inode_lock_try(vector_inumber[2], 'w'))
+                    /* can lock all three inodes*/
+                    flag = 1;
+                else{
+                    count ++;
+                    inode_lock_disable(vector_inumber[1]);
+                    inode_lock_disable(vector_inumber[0]);
+                    /* wait for a random number of seconds before trying to lock again*/
+                    sleep((rand() % (max + 1)));
+                }
+            }
+            else {
+                count ++;
+                inode_lock_disable(vector_inumber[0]);
+                /* wait for a random number of seconds before trying to lock again*/
+                sleep((rand() % (max + 1)));
+            }
+        }
+        else{
+            count ++;
+            /* wait for a random number of seconds before trying to lock again*/
+            sleep((rand() % (max + 1)));
+        }
+    }
 
 	/* removes the current child from the parent in the current pathname*/
 	if (dir_reset_entry(current_parent_inumber, child_inumber) == FAIL) {
@@ -432,40 +500,9 @@ int move(char* current_pathname, char* new_pathname) {
 		printf("failed to delete %s from dir %s\n",
 				current_child_name, current_parent_name);
 
-		disable_locks(vector_inumber);
+		disable_locks(vector_inumber, 3);
 		return FAIL;
 	}
-	
-	flag = 0;
-	while (!flag) {
-		if (inode_lock_enable(new_parent_inumber, 'w')) {
-			if (inode_lock_try(new_parent_inumber, 'w')) {
-				vector_inumber[i++] =(new_parent_inumber);
-				flag = 1;
-			}
-			else {
-				inode_lock_disable(new_parent_inumber);
-				sleep(rand());
-			}
-		}
-	}
-	//inode_lock_enable(new_parent_inumber, 'w');
-	//vector_inumber[i++] = new_parent_inumber;
-	flag = 0;
-	while (!flag) {
-		if (inode_lock_enable(child_inumber, 'w')) {
-			if (inode_lock_try(child_inumber, 'w')) {
-				vector_inumber[i++] = child_inumber;
-				flag = 1;
-			}
-			else {
-				inode_lock_disable(child_inumber);
-				sleep(rand());
-			}
-		}
-	}
-	//inode_lock_enable(child_inumber, 'w');
-	//vector_inumber[i++] = child_inumber;
 
 	/* adds the current child to the parent in the new pathname with the new name*/
 	if (dir_add_entry(new_parent_inumber, child_inumber, new_child_name) == FAIL) {
@@ -473,12 +510,12 @@ int move(char* current_pathname, char* new_pathname) {
 		printf("could not add entry %s in dir %s\n",
 				current_child_name, new_parent_name);
 
-		disable_locks(vector_inumber);
+		disable_locks(vector_inumber, 3);
 		return FAIL;
 	}
 
 	printf("Moving: %s to %s\n", current_pathname_copy, new_pathname_copy);
-	disable_locks(vector_inumber);
+	disable_locks(vector_inumber, 3);
 	return SUCCESS;
 }
 
