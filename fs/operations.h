@@ -2,8 +2,8 @@
 #define FS_H
 #include "state.h"
 
-void disable_locks(int vector[]);
-void initialize_vector(int vector[]);
+void disable_locks(int vector[], int limit);
+void initialize_vector(int vector[], int limit);
 void init_fs();
 void destroy_fs();
 int is_dir_empty(DirEntry *dirEntries);
