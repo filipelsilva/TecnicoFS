@@ -92,6 +92,7 @@ void insertCommand(char* data) {
 	prod_num++;
 	//printf("%s\n", data);
 	numberCommands++;
+	
 	pthread_cond_signal(&consumer);
 	call_vector_unlock();
 }
@@ -112,8 +113,10 @@ char* removeCommand() {
 	command = inputCommands[cons_num % MAX_COMMANDS];
 	cons_num++;
 	numberCommands--;
+
 	pthread_cond_signal(&producer);
 	call_vector_unlock();
+	
 	return command;
 }
 
