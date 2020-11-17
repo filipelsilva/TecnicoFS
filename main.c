@@ -63,13 +63,41 @@ FILE* openFile(char* name, char* mode) {
 	return fp;
 }
 
+/* Initializes locks */
+void sync_locks_init() {
+	if (pthread_mutex_init(&call_vector, NULL)) {
+		fprintf(stderr, "Error: could not initialize mutex: call_vector\n");
+	}
+
+	if (pthread_cond_init(&producer, NULL)) {
+		fprintf(stderr, "Error: could not initialize condition: producer\n");
+	}
+
+	if (pthread_cond_init(&consumer, NULL)) {
+		fprintf(stderr, "Error: could not initialize condition: consumer\n");
+	}
+}
+
+/* Destroys locks */
+void sync_locks_destroy() {
+	if (pthread_cond_destroy(&consumer)) {
+		fprintf(stderr, "Error: could not destroy mutex: consumer\n");
+	}
+
+	if (pthread_cond_destroy(&producer)) {
+		fprintf(stderr, "Error: could not destroy condition: producer\n");
+	}
+
+	if (pthread_mutex_destroy(&call_vector)) {
+		fprintf(stderr, "Error: could not destroy mutex: call_vector\n");
+	}
+}
 
 /* Call vector -> syncronization lock enabler */
 void call_vector_lock() {
 	if (pthread_mutex_lock(&call_vector)) {
 		fprintf(stderr, "Error: could not lock mutex: call_vector\n");
 	}
-	//printf("UNLOCK\n");
 }
 
 
@@ -78,19 +106,23 @@ void call_vector_unlock() {
 	if (pthread_mutex_unlock(&call_vector)) {
 		fprintf(stderr, "Error: could not unlock mutex: call_vector\n");
 	}
-	//printf("LOCK\n");
+}
+
+void cond_wait(pthread_cond_t* cond, pthread_mutex_t* mutex) {
+	if (pthread_cond_wait(cond, mutex)) {
+		fprintf(stderr, "Error: could not block on condition variable\n");
+	}
 }
 
 void insertCommand(char* data) {
 	call_vector_lock();
 
 	while (numberCommands == MAX_COMMANDS) {
-		pthread_cond_wait(&producer, &call_vector);
+		cond_wait(&producer, &call_vector);
 	}
 
 	strcpy(inputCommands[prod_num % MAX_COMMANDS], data);
 	prod_num++;
-	//printf("%s\n", data);
 	numberCommands++;
 
 	pthread_cond_signal(&consumer);
@@ -103,7 +135,7 @@ char* removeCommand() {
 
 	while (numberCommands == 0) {
 		if (flag) {
-			pthread_cond_wait(&consumer, &call_vector);
+			cond_wait(&consumer, &call_vector);
 		} else {
 			call_vector_unlock();
 			return NULL;
@@ -127,6 +159,7 @@ void errorParse() {
 
 void* processInput() {
 	char line[MAX_INPUT_SIZE];
+	
 	/* Get time after the initialization of the process input */
 	gettimeofday(&tic, NULL);
 
@@ -176,20 +209,13 @@ void* processInput() {
 		} else {
 			flag = 0;
 		}
-		//printf("%d %s\n", flag, line);
 	}
 	return NULL;
 }
 
-
 void* applyCommands() {
 	while (1) {
-		/* lock acess to call vector */
-
 		const char* command = removeCommand();
-
-		//printf("chega aqui? %s\n", command);
-		/* unlock acess to call vector */
 
 		if (command == NULL) {
 			return NULL;
@@ -211,11 +237,9 @@ void* applyCommands() {
 			case 'c':
 				switch (type[0]) {
 					case 'f':
-						//printf("Create file: %s\n", name);
 						create(name, T_FILE);
 						break;
 					case 'd':
-						//printf("Create directory: %s\n", name);
 						create(name, T_DIRECTORY);
 						break;
 					default:
@@ -234,12 +258,10 @@ void* applyCommands() {
 				break;
 
 			case 'd':
-				//printf("Delete: %s\n", name);
 				delete(name);
 				break;
 
 			case 'm':
-				//printf("Moving: %s to %s\n", name, type);
 				move(name, type);
 				break;			
 
@@ -296,32 +318,13 @@ int main(int argc, char* argv[]) {
 
 	argumentParser(argc, argv);
 
-	if (pthread_mutex_init(&call_vector, NULL)) {
-		fprintf(stderr, "Error: could not initialize mutex: call_vector\n");
-	}
-	if (pthread_cond_init(&producer, NULL)) {
-		fprintf(stderr, "Error: could not initialize condition: producer\n");
-	}
-
-	if (pthread_cond_init(&consumer, NULL)) {
-		fprintf(stderr, "Error: could not initialize condition: consumer\n");
-	}
+	sync_locks_init();
 
 	input = openFile(inputfile, "r");
 	processPool();
 	fclose(input);
 
-	if (pthread_cond_destroy(&consumer)) {
-		fprintf(stderr, "Error: could not destroy mutex: consumer\n");
-	}
-
-	if (pthread_cond_destroy(&producer)) {
-		fprintf(stderr, "Error: could not destroy condition: producer\n");
-	}
-
-	if (pthread_mutex_destroy(&call_vector)) {
-		fprintf(stderr, "Error: could not destroy mutex: call_vector\n");
-	}
+	sync_locks_destroy();
 
 	print_elapsed_time();
 
