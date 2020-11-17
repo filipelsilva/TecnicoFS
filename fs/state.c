@@ -8,23 +8,21 @@
 
 inode_t inode_table[INODE_TABLE_SIZE];
 
-int inode_lock_enable(int inumber, char mode) {
+void inode_lock_enable(int inumber, char mode) {
 	switch (mode) {
 		case 'r':
 			if (pthread_rwlock_rdlock(&inode_table[inumber].rwlock)) {
 				fprintf(stderr, "Error: (try) could not lock rwlock (read-only)\n");
-			    return 0;
 			}
-			return 1;
+		    break;  
 		
 		case 'w':
 			if (pthread_rwlock_wrlock(&inode_table[inumber].rwlock)) {
 				fprintf(stderr, "Error: (try) could not lock rwlock (write)\n");
-			    return 0;
 			}
-			return 1;
+		    break;  
 		
-		default: return 0;
+		default: break; 
 	}
 }
 
