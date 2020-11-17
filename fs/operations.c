@@ -13,7 +13,6 @@ void initialize_vector(int vector[], int limit) {
 void disable_locks(int vector[], int limit) {
 	for (int i = limit - 1; i >= 0; i--) {
 		if (vector[i] != FREE_INODE) {
-			//////printf("Trying to unlock %d\n", i);
 			inode_lock_disable(vector[i]);
 			vector[i] = FREE_INODE;
 		}
@@ -339,7 +338,6 @@ int lookup(char *name) {
 	type nType;
 	union Data data;
 
-	//////printf("Trying to lock %d lookup\n", current_inumber);
 	inode_lock_enable(current_inumber, 'r');
 	vector_inumber[i++] = current_inumber;
 
@@ -350,7 +348,7 @@ int lookup(char *name) {
 
 	/* search for all sub nodes */
 	while (path != NULL && (current_inumber = lookup_sub_node(path, data.dirEntries)) != FAIL) {
-		//////printf("Trying to lock %d lookup\n", current_inumber);
+		
 		inode_lock_enable(current_inumber, 'r');
 		vector_inumber[i++] = current_inumber;
 
@@ -421,6 +419,7 @@ int move(char* current_pathname, char* new_pathname) {
 	initialize_vector(vector_inumber, 3);
 	strcpy(new_pathname_copy, new_pathname);
 	strcpy(current_pathname_copy, current_pathname);
+	
 	child_inumber = lookup(current_pathname);
 
 	/* checks if there is a directory/file with the current pathname*/
