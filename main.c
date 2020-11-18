@@ -108,9 +108,17 @@ void call_vector_unlock() {
 	}
 }
 
+/* Activates the conditional wait */
 void cond_wait(pthread_cond_t* cond, pthread_mutex_t* mutex) {
 	if (pthread_cond_wait(cond, mutex)) {
 		fprintf(stderr, "Error: could not block on condition variable\n");
+	}
+}
+
+/* Signals the conditional wait to move on */
+void signal(pthread_cond_t* cond) {
+	if (pthread_cond_signal(cond)) {
+		fprintf(stderr, "Error: could not signal the condition variable\n");
 	}
 }
 
@@ -125,7 +133,7 @@ void insertCommand(char* data) {
 	prod_num++;
 	numberCommands++;
 
-	pthread_cond_signal(&consumer);
+	signal(&consumer);
 	call_vector_unlock();
 }
 
@@ -146,7 +154,7 @@ char* removeCommand() {
 	cons_num++;
 	numberCommands--;
 
-	pthread_cond_signal(&producer);
+	signal(&producer);
 	call_vector_unlock();
 
 	return command;
