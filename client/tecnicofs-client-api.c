@@ -6,11 +6,12 @@
 #include <sys/un.h>
 #include <stdio.h>
 
-#define CLIENT_SOCKET_NAME "cliente"
+#define CLIENT_SOCKET_NAME "maria"
 
 char * server_path;
 
 int tfsCreate(char *filename, char nodeType) {
+
   return -1;
 }
 
@@ -27,7 +28,6 @@ int tfsLookup(char *path) {
 }
 
 int setSockAddrUn(char *path, struct sockaddr_un *addr) {
-
     if (addr == NULL)
         return 0;
 
@@ -40,26 +40,25 @@ int setSockAddrUn(char *path, struct sockaddr_un *addr) {
 
 int tfsMount(char * sockPath) {
   int sockfd;
-  socklen_t /*server_len,*/ client_len;
-  struct sockaddr_un /*server_addr,*/ client_addr;
-  //char buffer[1024];
+  socklen_t client_len;
+  struct sockaddr_un client_addr;
 
-  if ((sockfd = socket(AF_UNIX, SOCK_DGRAM, 0)) <= 0){
+  if ((sockfd = socket(AF_UNIX, SOCK_DGRAM, 0)) < 0) {
     perror("client: can't open socket\n");
     exit(EXIT_FAILURE);
   }
 
-  client_len = setSockAddrUn(CLIENT_SOCKET_NAME, &client_addr);
+  unlink(sockPath);
+  client_len = setSockAddrUn (CLIENT_SOCKET_NAME, &client_addr);
 
-  if(bind(sockfd, (struct sockaddr *) &client_addr, client_len) < 0){
-    fprintf(stderr, "client: bind error\n");
+  if (bind(sockfd, (struct sockaddr *) &client_addr, client_len) < 0) {
+    perror("client: bind error\n");
     exit(EXIT_FAILURE);
   }
 
-  strcpy(server_path, sockPath);
-  //server_len = setSockAddrUn(server_path, &server_addr);
+  //strcpy(server_path, sockPath);
 
-  return -1;
+  return 0;
 }
 
 int tfsUnmount() {
