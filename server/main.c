@@ -156,8 +156,7 @@ int applyCommands(const char* command) {
       return delete(name);
 
     case 'm':
-      move(name, type);
-      break;
+      return move(name, type);
 
     default: { /* error */
            fprintf(stderr, "Error: command to apply\n");

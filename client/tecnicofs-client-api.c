@@ -67,7 +67,25 @@ int tfsDelete(char *path) {
 }
 
 int tfsMove(char *from, char *to) {
-  return -1;
+  socklen_t server_len;
+  struct sockaddr_un server_addr;
+  server_len = setSockAddrUn(server_path, &server_addr);
+  char str[MAX_INPUT_SIZE];
+  int answer;
+
+  sprintf(str, "m %s %s", from, to);
+
+  if (sendto(sockfd, str, strlen(str)+1, 0, (struct sockaddr *) &server_addr, server_len) < 0) {
+    fprintf(stderr,"client: sendto error\n");
+    exit(EXIT_FAILURE);
+  }
+
+  if (recvfrom(sockfd, &answer, sizeof(int), 0, 0, 0) < 0) {
+    fprintf(stderr,"client: recvfrom error");
+    exit(EXIT_FAILURE);
+  }
+
+  return answer;
 }
 
 int tfsLookup(char *path) {
