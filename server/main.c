@@ -12,7 +12,7 @@
 
 #define MAX_COMMANDS 10
 #define MAX_INPUT_SIZE 100
-#define SOCKET_NAME "/tmp/servidorsocket"
+#define SOCKET_NAME "/tmp/serversocket"
 #define INDIM 30
 #define OUTDIM 512
 
@@ -347,9 +347,10 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "server: can't open socket\n");
         exit(EXIT_FAILURE);
     }
+	
+	unlink(SOCKET_NAME);
 
     addrlen = setSockAddrUn (SOCKET_NAME, &server_addr);
-
     if (bind(sockfd, (struct sockaddr *) &server_addr, addrlen) < 0) {
         fprintf(stderr, "server: bind error\n");
         exit(EXIT_FAILURE);
@@ -363,14 +364,16 @@ int main(int argc, char* argv[]) {
         addrlen = sizeof(struct sockaddr_un);
 
         c = recvfrom(sockfd, in_buffer, sizeof(in_buffer)-1, 0,
-                     (struct sockaddr *)&client_addr, &addrlen);
-
-        printf("%s\n", in_buffer);
+			(struct sockaddr *)&client_addr, &addrlen);
 
         if (c <= 0) continue;
-
         in_buffer[c]='\0';
+
+        printf("%s\n", in_buffer);
     }
+	
+	close(sockfd);
+	unlink(SOCKET_NAME);
 
 	/* init filesystem */
 	init_fs();

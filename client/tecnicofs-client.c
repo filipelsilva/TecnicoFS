@@ -112,15 +112,12 @@ void *processInput() {
 int main(int argc, char* argv[]) {
     parseArgs(argc, argv);
 
-    if (tfsMount(serverName) == 0)
-      printf("Mounted! (socket = %s)\n", serverName);
-    else {
+    if (tfsMount(serverName)) {
       fprintf(stderr, "Unable to mount socket: %s\n", serverName);
       exit(EXIT_FAILURE);
     }
 
     processInput();
-
     tfsUnmount();
 
     exit(EXIT_SUCCESS);
