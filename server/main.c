@@ -93,6 +93,7 @@ int fsMount(){
     exit(EXIT_FAILURE);
   }
 
+  unlink(serverName);
   addrlen = setSockAddrUn (serverName, &server_addr);
 
   if (bind(sockfd, (struct sockaddr *) &server_addr, addrlen) < 0) {
@@ -115,12 +116,7 @@ FILE* openFile(char* name, char* mode) {
   return fp;
 }
 
-void applyCommands(const char* command) {
-  printf("%s", command);
-  if (command == NULL) {
-    return ;
-  }
-
+int applyCommands(const char* command) {
   call_vector_lock();
   char token;
   char name[MAX_INPUT_SIZE], type[MAX_INPUT_SIZE];
@@ -137,29 +133,27 @@ void applyCommands(const char* command) {
     case 'c':
       switch (type[0]) {
         case 'f':
-          create(name, T_FILE);
-          break;
+          return create(name, T_FILE);
         case 'd':
-          create(name, T_DIRECTORY);
-          break;
+          return create(name, T_DIRECTORY);
         default:
           fprintf(stderr, "Error: invalid node type\n");
           exit(EXIT_FAILURE);
       }
-      break;
 
     case 'l':
       searchResult = lookup(name);
-      if (searchResult >= 0)
+      if (searchResult >= 0) {
         printf("Search: %s found\n", name);
-      else
+        return searchResult;
+      }
+      else {
         printf("Search: %s not found\n", name);
-
-      break;
+        return searchResult;
+      }
 
     case 'd':
-      delete(name);
-      break;
+      return delete(name);
 
     case 'm':
       move(name, type);
@@ -170,17 +164,20 @@ void applyCommands(const char* command) {
            exit(EXIT_FAILURE);
          }
   }
+
+  exit(EXIT_FAILURE);
 }
 
 void *receiveCommands(){
+  struct sockaddr_un client_addr;
+  socklen_t addrlen;
+  char in_buffer[INDIM];
+  int c;
+  int answer;
+
+  addrlen = sizeof(struct sockaddr_un);
+
   while(1){
-    struct sockaddr_un client_addr;
-    socklen_t addrlen;
-    char in_buffer[INDIM];
-    int c;
-
-    addrlen = sizeof(struct sockaddr_un);
-
     c = recvfrom(sockfd, in_buffer, sizeof(in_buffer)-1, 0,
                  (struct sockaddr *)&client_addr, &addrlen);
 
@@ -188,9 +185,12 @@ void *receiveCommands(){
 
     in_buffer[c]='\0';
 
-    applyCommands(in_buffer);
+    answer = applyCommands(in_buffer);
 
-    printf("%s\n", in_buffer);
+    if (sendto(sockfd, &answer, sizeof(int), 0, (struct sockaddr *) &client_addr, addrlen) < 0) {
+      fprintf(stderr,"client: sendto error\n");
+      exit(EXIT_FAILURE);
+    }
 
   }
 

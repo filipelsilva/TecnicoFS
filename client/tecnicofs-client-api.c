@@ -26,22 +26,44 @@ int tfsCreate(char *filename, char nodeType) {
   socklen_t server_len;
   struct sockaddr_un server_addr;
   server_len = setSockAddrUn(server_path, &server_addr);
-  //int str_len;
-
   char str[MAX_INPUT_SIZE];
-  str[0] = 'c';
-  str[1] = ' ';
-  strcat(str, filename);
+  int answer;
+
+  sprintf(str, "c %s %c", filename, nodeType);
 
   if (sendto(sockfd, str, strlen(str)+1, 0, (struct sockaddr *) &server_addr, server_len) < 0) {
     fprintf(stderr,"client: sendto error\n");
     exit(EXIT_FAILURE);
   }
-  return 0;
+
+  if (recvfrom(sockfd, &answer, sizeof(int), 0, 0, 0) < 0) {
+    fprintf(stderr,"client: recvfrom error");
+    exit(EXIT_FAILURE);
+  }
+
+  return answer;
 }
 
 int tfsDelete(char *path) {
-  return -1;
+  socklen_t server_len;
+  struct sockaddr_un server_addr;
+  server_len = setSockAddrUn(server_path, &server_addr);
+  char str[MAX_INPUT_SIZE];
+  int answer;
+
+  sprintf(str, "d %s", path);
+
+  if (sendto(sockfd, str, strlen(str)+1, 0, (struct sockaddr *) &server_addr, server_len) < 0) {
+    fprintf(stderr,"client: sendto error\n");
+    exit(EXIT_FAILURE);
+  }
+
+  if (recvfrom(sockfd, &answer, sizeof(int), 0, 0, 0) < 0) {
+    fprintf(stderr,"client: recvfrom error");
+    exit(EXIT_FAILURE);
+  }
+
+  return answer;
 }
 
 int tfsMove(char *from, char *to) {
@@ -49,7 +71,25 @@ int tfsMove(char *from, char *to) {
 }
 
 int tfsLookup(char *path) {
-  return -1;
+  socklen_t server_len;
+  struct sockaddr_un server_addr;
+  server_len = setSockAddrUn(server_path, &server_addr);
+  char str[MAX_INPUT_SIZE];
+  int answer;
+
+  sprintf(str, "l %s", path);
+
+  if (sendto(sockfd, str, strlen(str)+1, 0, (struct sockaddr *) &server_addr, server_len) < 0) {
+    fprintf(stderr,"client: sendto error\n");
+    exit(EXIT_FAILURE);
+  }
+
+  if (recvfrom(sockfd, &answer, sizeof(int), 0, 0, 0) < 0) {
+    fprintf(stderr,"client: recvfrom error");
+    exit(EXIT_FAILURE);
+  }
+
+  return answer;
 }
 
 int tfsMount(char * sockPath) {
@@ -62,6 +102,7 @@ int tfsMount(char * sockPath) {
     exit(EXIT_FAILURE);
   }
 
+  unlink(CLIENT_SOCKET_NAME);
   client_len = setSockAddrUn (CLIENT_SOCKET_NAME, &client_addr);
 
   if (bind(sockfd, (struct sockaddr *) &client_addr, client_len) < 0) {
