@@ -25,6 +25,7 @@ int setSockAddrUn(char *path, struct sockaddr_un *addr) {
 int tfsCreate(char *filename, char nodeType) {
 	socklen_t server_len;
 	struct sockaddr_un server_addr;
+	char buffer[1024];
 
 	server_len = setSockAddrUn(server_path, &server_addr);
 
@@ -32,6 +33,13 @@ int tfsCreate(char *filename, char nodeType) {
 		fprintf(stderr,"client: sendto error\n");
 		exit(EXIT_FAILURE);
 	}
+	
+	if (recvfrom(sockfd, buffer, sizeof(buffer), 0, 0, 0) < 0) {
+		perror("client: recvfrom error");
+		exit(EXIT_FAILURE);
+	} 
+
+	printf("Recebeu resposta do servidor: %s\n", buffer);
 
 	return 0;
 }
@@ -72,5 +80,7 @@ int tfsMount(char * sockPath) {
 }
 
 int tfsUnmount() {
-  	return -1;
+	close(sockfd);
+	unlink(CLIENT_SOCKET_NAME);
+	return 0;
 }

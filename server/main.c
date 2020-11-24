@@ -358,7 +358,7 @@ int main(int argc, char* argv[]) {
 
     while(1){
         struct sockaddr_un client_addr;
-        char in_buffer[INDIM];
+        char in_buffer[INDIM], out_buffer[OUTDIM];
         int c;
 
         addrlen = sizeof(struct sockaddr_un);
@@ -370,6 +370,10 @@ int main(int argc, char* argv[]) {
         in_buffer[c]='\0';
 
         printf("%s\n", in_buffer);
+
+        c = sprintf(out_buffer, "Pedido: %s\n", in_buffer);
+    
+		sendto(sockfd, out_buffer, c+1, 0, (struct sockaddr *)&client_addr, addrlen);
     }
 	
 	close(sockfd);
