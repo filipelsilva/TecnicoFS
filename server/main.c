@@ -12,7 +12,7 @@
 
 #define MAX_COMMANDS 10
 #define MAX_INPUT_SIZE 100
-#define SOCKET_NAME "server/ist195675"
+#define SOCKET_NAME "/tmp/servidorsocket"
 #define INDIM 30
 #define OUTDIM 512
 
@@ -342,38 +342,34 @@ int main(int argc, char* argv[]) {
     struct sockaddr_un server_addr;
     socklen_t addrlen;
 
-
     // Criar socket
     if ((sockfd = socket(AF_UNIX, SOCK_DGRAM, 0)) < 0) {
-        fprintf(stderr, "server: can't open socket");
+        fprintf(stderr, "server: can't open socket\n");
         exit(EXIT_FAILURE);
     }
 
     addrlen = setSockAddrUn (SOCKET_NAME, &server_addr);
 
     if (bind(sockfd, (struct sockaddr *) &server_addr, addrlen) < 0) {
-        fprintf(stderr, "server: bind error");
+        fprintf(stderr, "server: bind error\n");
         exit(EXIT_FAILURE);
     }
 
     while(1){
         struct sockaddr_un client_addr;
-        char in_buffer[INDIM], out_buffer[OUTDIM];
+        char in_buffer[INDIM];
         int c;
 
         addrlen = sizeof(struct sockaddr_un);
 
         c = recvfrom(sockfd, in_buffer, sizeof(in_buffer)-1, 0,
                      (struct sockaddr *)&client_addr, &addrlen);
-        if (c<= 0) continue;
-        //Preventivo, caso o cliente nao tenha terminado a mensagem em '\0',
+
+        printf("%s\n", in_buffer);
+
+        if (c <= 0) continue;
+
         in_buffer[c]='\0';
-
-        c = sprintf(out_buffer, "Ola' %s, que tal vai isso?", in_buffer);
-
-        // Envia mensagem
-        //sendto(sockfd, out_buffer, c+1, 0, (struct sockaddr *)&client_addr, addrlen);
-
     }
 
 	/* init filesystem */
