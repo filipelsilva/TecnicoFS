@@ -56,7 +56,6 @@ int tfsMount(char * sockPath) {
     exit(EXIT_FAILURE);
   }
 
-  unlink(sockPath);
   client_len = setSockAddrUn (CLIENT_SOCKET_NAME, &client_addr);
 
   if (bind(sockfd, (struct sockaddr *) &client_addr, client_len) < 0) {
