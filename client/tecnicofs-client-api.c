@@ -26,8 +26,14 @@ int tfsCreate(char *filename, char nodeType) {
   socklen_t server_len;
   struct sockaddr_un server_addr;
   server_len = setSockAddrUn(server_path, &server_addr);
+  //int str_len;
 
-  if (sendto(sockfd, "Hello World", strlen("Hello World")+1, 0, (struct sockaddr *) &server_addr, server_len) < 0) {
+  char str[MAX_INPUT_SIZE];
+  str[0] = 'c';
+  str[1] = ' ';
+  strcat(str, filename);
+
+  if (sendto(sockfd, str, strlen(str)+1, 0, (struct sockaddr *) &server_addr, server_len) < 0) {
     fprintf(stderr,"client: sendto error\n");
     exit(EXIT_FAILURE);
   }
