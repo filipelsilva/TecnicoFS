@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include "state.h"
-#include "../tecnicofs-api-constants.h"
+#include "../../tecnicofs-api-constants.h"
 
 inode_t inode_table[INODE_TABLE_SIZE];
 
