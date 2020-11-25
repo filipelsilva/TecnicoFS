@@ -6,7 +6,7 @@
 #include <sys/un.h>
 #include <stdio.h>
 
-#define CLIENT_SOCKET_NAME "/tmp/clientesocket"
+//#define CLIENT_SOCKET_NAME "/tmp/clientesocket"
 
 char * server_path;
 int sockfd;
@@ -110,7 +110,7 @@ int tfsLookup(char *path) {
     return answer;
 }
 
-int tfsMount(char * sockPath) {
+int tfsMount(char* clientPath, char * sockPath) {
     socklen_t client_len;
     struct sockaddr_un client_addr;
     server_path = malloc((strlen(sockPath)+1));
@@ -120,12 +120,9 @@ int tfsMount(char * sockPath) {
         exit(EXIT_FAILURE);
     }
 
-    if(unlink(CLIENT_SOCKET_NAME) < 0){
-        fprintf(stderr, "client: unlink error \n");
-        exit(EXIT_FAILURE);
-    }
+    unlink(clientPath);
 
-    client_len = setSockAddrUn (CLIENT_SOCKET_NAME, &client_addr);
+    client_len = setSockAddrUn (clientPath, &client_addr);
 
     if (bind(sockfd, (struct sockaddr *) &client_addr, client_len) < 0) {
         fprintf(stderr,"client: bind error\n");
@@ -137,14 +134,14 @@ int tfsMount(char * sockPath) {
     return 0;
 }
 
-int tfsUnmount() {
+int tfsUnmount(char* clientPath) {
 
     if(close(sockfd) < 0){
         fprintf(stderr, "client: close error \n");
         exit(EXIT_FAILURE);
     }
 
-    if (unlink(CLIENT_SOCKET_NAME) < 0){
+    if (unlink(clientPath) < 0){
         fprintf(stderr, "client: unlink error \n");
         exit(EXIT_FAILURE);
     }
