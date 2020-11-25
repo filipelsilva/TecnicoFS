@@ -120,7 +120,11 @@ int tfsMount(char * sockPath) {
         exit(EXIT_FAILURE);
     }
 
-    unlink(CLIENT_SOCKET_NAME);
+    if(unlink(CLIENT_SOCKET_NAME) < 0){
+        fprintf(stderr, "client: unlink error \n");
+        exit(EXIT_FAILURE);
+    }
+
     client_len = setSockAddrUn (CLIENT_SOCKET_NAME, &client_addr);
 
     if (bind(sockfd, (struct sockaddr *) &client_addr, client_len) < 0) {
