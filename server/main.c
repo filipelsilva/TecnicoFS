@@ -30,43 +30,43 @@ struct timeval tic, toc;
 
 /* Initializes locks */
 void sync_locks_init() {
-  if (pthread_mutex_init(&call_vector, NULL)) {
-    fprintf(stderr, "Error: could not initialize mutex: call_vector\n");
-  }
+    if (pthread_mutex_init(&call_vector, NULL)) {
+        fprintf(stderr, "Error: could not initialize mutex: call_vector\n");
+    }
 }
 
 /* Destroys locks */
 void sync_locks_destroy() {
-  if (pthread_mutex_destroy(&call_vector)) {
-    fprintf(stderr, "Error: could not destroy mutex: call_vector\n");
-  }
+    if (pthread_mutex_destroy(&call_vector)) {
+        fprintf(stderr, "Error: could not destroy mutex: call_vector\n");
+    }
 }
 
 /* Call vector -> syncronization lock enabler */
 void call_vector_lock() {
-  if (pthread_mutex_lock(&call_vector)) {
-    fprintf(stderr, "Error: could not lock mutex: call_vector\n");
-  }
+    if (pthread_mutex_lock(&call_vector)) {
+        fprintf(stderr, "Error: could not lock mutex: call_vector\n");
+    }
 }
 
 
 /* Call vector -> syncronization lock disabler */
 void call_vector_unlock() {
-  if (pthread_mutex_unlock(&call_vector)) {
-    fprintf(stderr, "Error: could not unlock mutex: call_vector\n");
-  }
+    if (pthread_mutex_unlock(&call_vector)) {
+        fprintf(stderr, "Error: could not unlock mutex: call_vector\n");
+    }
 }
 
 int setSockAddrUn(char *path, struct sockaddr_un *addr) {
 
-  if (addr == NULL)
-    return 0;
+    if (addr == NULL)
+        return 0;
 
-  bzero((char *)addr, sizeof(struct sockaddr_un));
-  addr->sun_family = AF_UNIX;
-  strcpy(addr->sun_path, path);
+    bzero((char *)addr, sizeof(struct sockaddr_un));
+    addr->sun_family = AF_UNIX;
+    strcpy(addr->sun_path, path);
 
-  return SUN_LEN(addr);
+    return SUN_LEN(addr);
 }
 
 void argumentParser(int argc, char* argv[]) {
@@ -85,115 +85,114 @@ void argumentParser(int argc, char* argv[]) {
 }
 
 int fsMount(){
-  struct sockaddr_un server_addr;
-  socklen_t addrlen;
+    struct sockaddr_un server_addr;
+    socklen_t addrlen;
 
-  if ((sockfd = socket(AF_UNIX, SOCK_DGRAM, 0)) < 0) {
-    fprintf(stderr, "server: can't open socket\n");
-    exit(EXIT_FAILURE);
-  }
+    if ((sockfd = socket(AF_UNIX, SOCK_DGRAM, 0)) < 0) {
+        fprintf(stderr, "server: can't open socket\n");
+        exit(EXIT_FAILURE);
+    }
 
-  unlink(serverName);
-  addrlen = setSockAddrUn (serverName, &server_addr);
+    unlink(serverName);
+    addrlen = setSockAddrUn (serverName, &server_addr);
 
-  if (bind(sockfd, (struct sockaddr *) &server_addr, addrlen) < 0) {
-    fprintf(stderr, "server: bind error\n");
-    exit(EXIT_FAILURE);
-  }
+    if (bind(sockfd, (struct sockaddr *) &server_addr, addrlen) < 0) {
+        fprintf(stderr, "server: bind error\n");
+        exit(EXIT_FAILURE);
+    }
 
   return 0;
 }
 
 /* File opening with NULL checker */
 FILE* openFile(char* name, char* mode) {
-  FILE* fp = fopen(name, mode);
+    FILE* fp = fopen(name, mode);
 
-  if (fp == NULL) {
-    fprintf(stderr, "Error: could not open file\n");
-    exit(TECNICOFS_ERROR_FILE_NOT_FOUND);
-  }
+    if (fp == NULL) {
+        fprintf(stderr, "Error: could not open file\n");
+        exit(TECNICOFS_ERROR_FILE_NOT_FOUND);
+    }
 
-  return fp;
+    return fp;
 }
 
 int applyCommands(const char* command) {
-  call_vector_lock();
-  char token;
-  char name[MAX_INPUT_SIZE], type[MAX_INPUT_SIZE];
-  int numTokens = sscanf(command, "%c %s %s", &token, name, type);
-  call_vector_unlock();
+    call_vector_lock();
+    char token;
+    char name[MAX_INPUT_SIZE], type[MAX_INPUT_SIZE];
+    int numTokens = sscanf(command, "%c %s %s", &token, name, type);
+    call_vector_unlock();
 
-  if (numTokens < 2) {
-    fprintf(stderr, "Error: invalid command in Queue\n");
-    exit(EXIT_FAILURE);
-  }
+    if (numTokens < 2) {
+        fprintf(stderr, "Error: invalid command in Queue\n");
+        exit(EXIT_FAILURE);
+    }
 
-  int searchResult;
-  switch (token) {
-    case 'c':
-      switch (type[0]) {
-        case 'f':
-          return create(name, T_FILE);
-        case 'd':
-          return create(name, T_DIRECTORY);
-        default:
-          fprintf(stderr, "Error: invalid node type\n");
-          exit(EXIT_FAILURE);
-      }
+    int searchResult;
+    switch (token) {
+        case 'c':
+            switch (type[0]) {
+                case 'f':
+                    return create(name, T_FILE);
+                case 'd':
+                    return create(name, T_DIRECTORY);
+                default:
+                    fprintf(stderr, "Error: invalid node type\n");
+                    exit(EXIT_FAILURE);
+        }
 
-    case 'l':
-      searchResult = lookup(name);
-      if (searchResult >= 0) {
-        printf("Search: %s found\n", name);
-        return searchResult;
-      }
-      else {
-        printf("Search: %s not found\n", name);
-        return searchResult;
-      }
+        case 'l':
+            searchResult = lookup(name);
+            if (searchResult >= 0) {
+                printf("Search: %s found\n", name);
+                return searchResult;
+            }
+            else {
+                printf("Search: %s not found\n", name);
+                return searchResult;
+            }
 
-    case 'd':
-      return delete(name);
+            case 'd':
+                return delete(name);
 
-    case 'm':
-      return move(name, type);
+            case 'm':
+                return move(name, type);
 
-    default: { /* error */
-           fprintf(stderr, "Error: command to apply\n");
-           exit(EXIT_FAILURE);
-         }
-  }
+            default: { /* error */
+                fprintf(stderr, "Error: command to apply\n");
+                exit(EXIT_FAILURE);
+            }
+    }
 
   exit(EXIT_FAILURE);
 }
 
 void *receiveCommands(){
-  struct sockaddr_un client_addr;
-  socklen_t addrlen;
-  char in_buffer[INDIM];
-  int c;
-  int answer;
+    struct sockaddr_un client_addr;
+    socklen_t addrlen;
+    char in_buffer[INDIM];
+    int c;
+    int answer;
 
-  addrlen = sizeof(struct sockaddr_un);
+    addrlen = sizeof(struct sockaddr_un);
 
-  while(1){
-    c = recvfrom(sockfd, in_buffer, sizeof(in_buffer)-1, 0,
+    while(1){
+        c = recvfrom(sockfd, in_buffer, sizeof(in_buffer)-1, 0,
                  (struct sockaddr *)&client_addr, &addrlen);
 
-    if (c <= 0) continue;
+        if (c <= 0) continue;
 
-    in_buffer[c]='\0';
+        in_buffer[c]='\0';
 
-    answer = applyCommands(in_buffer);
+        answer = applyCommands(in_buffer);
 
-    if (sendto(sockfd, &answer, sizeof(int), 0, (struct sockaddr *) &client_addr, addrlen) < 0) {
-      fprintf(stderr,"client: sendto error\n");
-      exit(EXIT_FAILURE);
+        if (sendto(sockfd, &answer, sizeof(int), 0, (struct sockaddr *) &client_addr, addrlen) < 0) {
+            fprintf(stderr,"client: sendto error\n");
+            exit(EXIT_FAILURE);
+        }
+
     }
-
-  }
-
-  return NULL;
+    return NULL;
 }
 
 /* process pool initializer and runner */
@@ -226,17 +225,17 @@ void print_elapsed_time() {
 }
 
 int main(int argc, char* argv[]) {
-  /* init filesystem */
-  init_fs();
+    /* init filesystem */
+    init_fs();
 
-  argumentParser(argc, argv);
+    argumentParser(argc, argv);
 
-  /* Create server socket*/
-  fsMount();
+    /* Create server socket*/
+    fsMount();
 
-  // /* Get time after the initialization of the process input */
-  //	gettimeofday(&tic, NULL);
-  sync_locks_init();
+    // /* Get time after the initialization of the process input */
+    //	gettimeofday(&tic, NULL);
+    sync_locks_init();
 
 	processPool();
 
