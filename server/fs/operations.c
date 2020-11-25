@@ -518,6 +518,18 @@ int move(char* current_pathname, char* new_pathname) {
 }
 
 
+/* File opening with NULL checker */
+FILE* openFile(char* name, char* mode) {
+    FILE* fp = fopen(name, mode);
+
+    if (fp == NULL) {
+        fprintf(stderr, "Error: could not open file\n");
+        exit(TECNICOFS_ERROR_FILE_NOT_FOUND);
+    }
+
+    return fp;
+}
+
 /*
  * Prints tecnicofs tree.
  * Input:
@@ -525,4 +537,15 @@ int move(char* current_pathname, char* new_pathname) {
  */
 void print_tecnicofs_tree(FILE *fp){
 	inode_print_tree(fp, FS_ROOT, "");
+}
+
+int print(char *name){
+    //FIXME: verificar erros
+    FILE *output = openFile(name, "w");
+
+    print_tecnicofs_tree(output);
+
+    fclose(output);
+
+    return 0;
 }

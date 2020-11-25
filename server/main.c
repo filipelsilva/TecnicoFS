@@ -22,9 +22,6 @@ int sockfd;
 /* Syncronization lock */
 pthread_mutex_t call_vector;
 
-/* Filenames for the inputfile and outputfile */
-char* outputfile = NULL;
-
 /* Timestamps for the elapsed time */
 struct timeval tic, toc;
 
@@ -104,16 +101,18 @@ int fsMount(){
   return 0;
 }
 
-/* File opening with NULL checker */
-FILE* openFile(char* name, char* mode) {
-    FILE* fp = fopen(name, mode);
-
-    if (fp == NULL) {
-        fprintf(stderr, "Error: could not open file\n");
-        exit(TECNICOFS_ERROR_FILE_NOT_FOUND);
+int fsUnmount(){
+    if(close(sockfd) < 0){
+        fprintf(stderr, "client: close error \n");
+        exit(EXIT_FAILURE);
     }
 
-    return fp;
+    if (unlink(serverName) < 0){
+        fprintf(stderr, "client: unlink error \n");
+        exit(EXIT_FAILURE);
+    }
+
+    return 0;
 }
 
 int applyCommands(const char* command) {
@@ -158,13 +157,16 @@ int applyCommands(const char* command) {
             case 'm':
                 return move(name, type);
 
+            case 'p':
+                return print(name);
+
             default: { /* error */
                 fprintf(stderr, "Error: command to apply\n");
                 exit(EXIT_FAILURE);
             }
     }
 
-  exit(EXIT_FAILURE);
+    exit(EXIT_FAILURE);
 }
 
 void *receiveCommands(){
@@ -198,7 +200,7 @@ void *receiveCommands(){
 /* process pool initializer and runner */
 void processPool() {
 	int i;
-	pthread_t tid[numberThreads]; //OU numberThreads - 1????
+	pthread_t tid[numberThreads];
 
 	for (i = 0; i < numberThreads; i++) {
 		if (pthread_create(&tid[i], NULL, receiveCommands, NULL)) {
@@ -241,12 +243,9 @@ int main(int argc, char* argv[]) {
 
 	sync_locks_destroy();
 
-	print_elapsed_time();
+	fsUnmount();
 
-	/* print tree */
-	FILE *output = openFile(outputfile, "w");
-	print_tecnicofs_tree(output);
-	fclose(output);
+	print_elapsed_time();
 
 	/* release allocated memory */
 	destroy_fs();

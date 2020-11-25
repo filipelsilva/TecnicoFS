@@ -110,6 +110,29 @@ int tfsLookup(char *path) {
     return answer;
 }
 
+int tfsPrint(char *path){
+    socklen_t server_len;
+    struct sockaddr_un server_addr;
+    server_len = setSockAddrUn(server_path, &server_addr);
+    char str[MAX_INPUT_SIZE];
+    int answer;
+
+    sprintf(str, "p %s", path);
+
+    if (sendto(sockfd, str, strlen(str)+1, 0, (struct sockaddr *) &server_addr, server_len) < 0) {
+        fprintf(stderr,"client: sendto error\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (recvfrom(sockfd, &answer, sizeof(int), 0, 0, 0) < 0) {
+        fprintf(stderr,"client: recvfrom error");
+        exit(EXIT_FAILURE);
+    }
+
+    return answer;
+}
+
+
 int tfsMount(char * sockPath) {
     socklen_t client_len;
     struct sockaddr_un client_addr;
@@ -120,11 +143,7 @@ int tfsMount(char * sockPath) {
         exit(EXIT_FAILURE);
     }
 
-    if(unlink(CLIENT_SOCKET_NAME) < 0){
-        fprintf(stderr, "client: unlink error \n");
-        exit(EXIT_FAILURE);
-    }
-
+    unlink(CLIENT_SOCKET_NAME);
     client_len = setSockAddrUn (CLIENT_SOCKET_NAME, &client_addr);
 
     if (bind(sockfd, (struct sockaddr *) &client_addr, client_len) < 0) {
