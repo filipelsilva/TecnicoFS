@@ -25,15 +25,35 @@ pthread_mutex_t call_vector;
 /* Timestamps for the elapsed time */
 struct timeval tic, toc;
 
+/* Conditional syncronization */
+pthread_cond_t other_cond, print_cond;
+int prod_num = 0, cons_num = 0;
+int print_counter = 0;
+
 /* Initializes locks */
 void sync_locks_init() {
     if (pthread_mutex_init(&call_vector, NULL)) {
         fprintf(stderr, "Error: could not initialize mutex: call_vector\n");
     }
+
+    if (pthread_cond_init(&other_cond, NULL)) {
+        fprintf(stderr, "Error: could not initialize condition: other_cond\n");
+    }
+
+    if (pthread_cond_init(&print_cond, NULL)) {
+        fprintf(stderr, "Error: could not initialize condition: print_cond\n");
+    }
 }
 
 /* Destroys locks */
 void sync_locks_destroy() {
+    if (pthread_cond_destroy(&print_cond)) {
+        fprintf(stderr, "Error: could not destroy mutex: print_cond\n");
+    }
+
+    if (pthread_cond_destroy(&other_cond)) {
+        fprintf(stderr, "Error: could not destroy condition: other_cond\n");
+    }
     if (pthread_mutex_destroy(&call_vector)) {
         fprintf(stderr, "Error: could not destroy mutex: call_vector\n");
     }
@@ -51,6 +71,20 @@ void call_vector_lock() {
 void call_vector_unlock() {
     if (pthread_mutex_unlock(&call_vector)) {
         fprintf(stderr, "Error: could not unlock mutex: call_vector\n");
+    }
+}
+
+/* Activates the conditional wait */
+void cond_wait(pthread_cond_t* cond, pthread_mutex_t* mutex) {
+    if (pthread_cond_wait(cond, mutex)) {
+        fprintf(stderr, "Error: could not block on condition variable\n");
+    }
+}
+
+/* Signals the conditional wait to move on */
+void signal(pthread_cond_t* cond) {
+    if (pthread_cond_signal(cond)) {
+        fprintf(stderr, "Error: could not signal the condition variable\n");
     }
 }
 
@@ -115,12 +149,28 @@ int fsUnmount(){
     return 0;
 }
 
-int applyCommands(const char* command) {
+int applyPrint(const char* command){
     call_vector_lock();
+
+    char token;
+    char filename[MAX_INPUT_SIZE];
+    sscanf(command, "%c %s", &token, filename);
+    int answer;
+
+    answer = print(filename);
+
+    print_counter --;
+
+    signal(&other_cond);
+    call_vector_unlock();
+
+    return answer;
+}
+
+int applyCommands(const char* command) {
     char token;
     char name[MAX_INPUT_SIZE], type[MAX_INPUT_SIZE];
     int numTokens = sscanf(command, "%c %s %s", &token, name, type);
-    call_vector_unlock();
 
     if (numTokens < 2) {
         fprintf(stderr, "Error: invalid command in Queue\n");
@@ -157,9 +207,6 @@ int applyCommands(const char* command) {
             case 'm':
                 return move(name, type);
 
-            case 'p':
-                return print(name);
-
             default: { /* error */
                 fprintf(stderr, "Error: command to apply\n");
                 exit(EXIT_FAILURE);
@@ -168,6 +215,22 @@ int applyCommands(const char* command) {
 
     exit(EXIT_FAILURE);
 }
+
+int applyOther(const char* command){
+    int answer;
+    call_vector_lock();
+
+    while (print_counter > 0) {
+        cond_wait(&other_cond, &call_vector);
+    }
+
+    answer = applyCommands(command);
+
+
+    call_vector_unlock();
+    return answer;
+}
+
 
 void *receiveCommands(){
     struct sockaddr_un client_addr;
@@ -186,7 +249,14 @@ void *receiveCommands(){
 
         in_buffer[c]='\0';
 
-        answer = applyCommands(in_buffer);
+        if (in_buffer[0] == 'p'){
+            print_counter ++;
+            answer = applyPrint(in_buffer);
+        }
+
+        else{
+            answer = applyOther(in_buffer);
+        }
 
         if (sendto(sockfd, &answer, sizeof(int), 0, (struct sockaddr *) &client_addr, addrlen) < 0) {
             fprintf(stderr,"client: sendto error\n");

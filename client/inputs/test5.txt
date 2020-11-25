@@ -29,8 +29,11 @@ c /e/f3 d
 # Deadlock entre duas tarefas
 # Estas operações devem ocorrer com sucesso
 m /a/b /c/b
+p ../client/outputs/51.txt
 m /c/d /a/d
 m /a/b2 /c/b2
+p ../client/outputs/52.txt
+p ../client/outputs/53.txt
 m /c/d2 /a/d2
 #
 # Agora, testar que não tentamos navegar dentro de ficheiros
