@@ -544,6 +544,7 @@ int print(char *name){
     FILE *output = openFile(name, "w");
 
     print_tecnicofs_tree(output);
+    printf("Print tree to: %s\n", name);
 
     fclose(output);
 

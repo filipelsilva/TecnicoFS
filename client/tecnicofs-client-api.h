@@ -8,7 +8,7 @@ int tfsDelete(char *path);
 int tfsLookup(char *path);
 int tfsMove(char *from, char *to);
 int tfsPrint(char *path);
-int tfsMount(char* serverName);
-int tfsUnmount();
+int tfsMount(char* clientName, char* serverName);
+int tfsUnmount(char* clientName);
 
 #endif /* CLIENT_H */

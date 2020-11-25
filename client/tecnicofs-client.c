@@ -4,7 +4,7 @@
 #include "../tecnicofs-api-constants.h"
 
 FILE* inputFile;
-char* serverName;
+char* serverName, *clientName;
 
 static void displayUsage (const char* appName) {
     printf("Usage: %s inputfile server_socket_name\n", appName);
@@ -12,12 +12,13 @@ static void displayUsage (const char* appName) {
 }
 
 static void parseArgs (long argc, char* const argv[]) {
-    if (argc != 3) {
+    if (argc != 4) {
         fprintf(stderr, "Invalid format:\n");
         displayUsage(argv[0]);
     }
 
-    serverName = argv[2];
+    clientName = argv[2];
+    serverName = argv[3];
 
     inputFile = fopen(argv[1], "r");
 
@@ -121,7 +122,7 @@ void *processInput() {
 int main(int argc, char* argv[]) {
     parseArgs(argc, argv);
 
-    if (tfsMount(serverName) == 0)
+    if (tfsMount(clientName, serverName) == 0)
       printf("Mounted! (socket = %s)\n", serverName);
     else {
       fprintf(stderr, "Unable to mount socket: %s\n", serverName);
@@ -130,7 +131,7 @@ int main(int argc, char* argv[]) {
 
     processInput();
 
-    if (tfsUnmount() == 0)
+    if (tfsUnmount(clientName) == 0)
         printf("Unmounted client stocket!\n");
     else {
         fprintf(stderr, "Unable to unmount client socket\n");

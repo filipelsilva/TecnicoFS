@@ -23,4 +23,4 @@ tecnicofs-client-api.o: tecnicofs-client-api.c ../tecnicofs-api-constants.h tecn
 
 clean:
 	@echo Cleaning...
-	rm -f fs/*.o *.o tecnicofs-client
+	rm -f fs/*.o *.o tecnicofs-client outputs/*.txt

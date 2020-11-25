@@ -3,17 +3,17 @@ c a f
 p ../client/outputs/11.txt
 c b f
 p ../client/outputs/12.txt
-p ../client/outputs/15.txt
-c c f
 p ../client/outputs/13.txt
+c c f
+p ../client/outputs/14.txt
 c d f
-p ../client/outputs/12.txt
+p ../client/outputs/15.txt
 c e f
 c f f
 c g f
 c h f 
 l c
 d c
-p ../client/outputs/14.txt
+p ../client/outputs/16.txt
 l c
-p ../client/outputs/1.txt
+p ../client/outputs/17.txt
