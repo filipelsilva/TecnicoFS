@@ -449,7 +449,7 @@ int move(char* current_pathname, char* new_pathname) {
 	current_parent_inumber = lookup(current_parent_name);
 
 	/* Example: "m /a /a/a". Prevent loops */
-	if (strstr(current_pathname_copy, new_parent_name) != NULL) {
+	if (new_parent_inumber != 0 && strstr(current_pathname_copy, new_parent_name) != NULL) {
 		printf("Moving: %s to %s\n", current_pathname_copy, new_pathname_copy);
 		printf("failed to move %s to %s, loop would occur\n",
 				current_pathname_copy, new_pathname_copy);
