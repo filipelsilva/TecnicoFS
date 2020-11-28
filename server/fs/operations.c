@@ -540,7 +540,6 @@ void print_tecnicofs_tree(FILE *fp){
 }
 
 int print(char *name){
-    //FIXME: verificar erros
     FILE *output = openFile(name, "w");
 
     print_tecnicofs_tree(output);

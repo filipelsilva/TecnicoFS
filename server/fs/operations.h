@@ -11,6 +11,7 @@ int create(char *name, type nodeType);
 int delete(char *name);
 int lookup(char *name);
 int move(char* current_pathname, char* new_pathname);
+FILE* openFile(char* name, char* mode);
 void print_tecnicofs_tree(FILE *fp);
 int print(char *name);
 

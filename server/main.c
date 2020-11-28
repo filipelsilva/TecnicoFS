@@ -3,7 +3,6 @@
 #include <getopt.h>
 #include <string.h>
 #include <ctype.h>
-#include <sys/time.h>
 #include <pthread.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -21,9 +20,6 @@ int sockfd;
 
 /* Syncronization lock */
 pthread_mutex_t call_vector;
-
-/* Timestamps for the elapsed time */
-struct timeval tic, toc;
 
 /* Conditional syncronization */
 pthread_cond_t other_cond, print_cond;
@@ -221,8 +217,8 @@ int applyCommands(const char* command) {
 }
 
 int applyOther(const char* command){
-    int answer;
     call_vector_lock();
+    int answer;
 
     while (print_counter > 0) {
         cond_wait(&other_cond, &call_vector);
@@ -294,14 +290,6 @@ void processPool() {
 		}
 	}
 
-	/* Get time after all has been done */
-	gettimeofday(&toc, NULL);
-}
-
-void print_elapsed_time() {
-	printf("TecnicoFS completed in %.4f seconds.\n",\
-			(double) (toc.tv_usec - tic.tv_usec) / \
-			1000000 + (double) (toc.tv_sec - tic.tv_sec));
 }
 
 int main(int argc, char* argv[]) {
@@ -313,8 +301,6 @@ int main(int argc, char* argv[]) {
     /* Create server socket*/
     fsMount();
 
-    // /* Get time after the initialization of the process input */
-    //	gettimeofday(&tic, NULL);
     sync_locks_init();
 
 	processPool();
@@ -322,8 +308,6 @@ int main(int argc, char* argv[]) {
 	sync_locks_destroy();
 
 	fsUnmount();
-
-	print_elapsed_time();
 
 	/* release allocated memory */
 	destroy_fs();
