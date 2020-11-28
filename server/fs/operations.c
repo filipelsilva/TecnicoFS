@@ -452,7 +452,7 @@ int move(char* current_pathname, char* new_pathname) {
 	if (strstr(current_pathname_copy, new_parent_name) != NULL) {
 		printf("Moving: %s to %s\n", current_pathname_copy, new_pathname_copy);
 		printf("failed to move %s to %s, loop would occur\n",
-				current_pathname, new_pathname);
+				current_pathname_copy, new_pathname_copy);
 
 		disable_locks(vector_inumber, 3);
 		return FAIL;

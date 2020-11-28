@@ -152,6 +152,10 @@ int fsUnmount(){
 int applyPrint(const char* command){
     call_vector_lock();
 
+    while (print_counter == 0) {
+        cond_wait(&print_cond, &call_vector);
+    }
+
     char token;
     char filename[MAX_INPUT_SIZE];
     sscanf(command, "%c %s", &token, filename);
@@ -226,7 +230,7 @@ int applyOther(const char* command){
 
     answer = applyCommands(command);
 
-
+    signal(&print_cond);
     call_vector_unlock();
     return answer;
 }
@@ -250,11 +254,15 @@ void *receiveCommands(){
         in_buffer[c]='\0';
 
         if (in_buffer[0] == 'p'){
+            call_vector_lock();
             print_counter ++;
+            call_vector_unlock();
+            printf("%s\n", in_buffer);
             answer = applyPrint(in_buffer);
         }
 
         else{
+            printf("%s\n", in_buffer);
             answer = applyOther(in_buffer);
         }
 
