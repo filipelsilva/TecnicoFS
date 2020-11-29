@@ -144,7 +144,7 @@ int main(int argc, char* argv[]) {
     processInput();
 
     if (tfsUnmount(clientName) == 0)
-        printf("Unmounted client stocket!\n");
+        printf("Unmounted client socket!\n");
     else {
         fprintf(stderr, "Unable to unmount client socket\n");
         exit(EXIT_FAILURE);
