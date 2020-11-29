@@ -216,7 +216,6 @@ int applyPrint(const char* command) {
     return answer;
 }
 
-
 void *receiveCommands() {
     struct sockaddr_un client_addr;
     socklen_t addrlen;
