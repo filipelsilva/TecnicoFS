@@ -470,7 +470,7 @@ int move(char* current_pathname, char* new_pathname) {
 				if (inode_lock_try(vector_inumber[2], 'w'))
 					/* can lock all three inodes*/
 					flag = 1;
-				else{
+				else {
 					count ++;
 					inode_lock_disable(vector_inumber[1]);
 					inode_lock_disable(vector_inumber[0]);
@@ -485,7 +485,7 @@ int move(char* current_pathname, char* new_pathname) {
 				sleep((rand() % (max + 1)));
 			}
 		}
-		else{
+		else {
 			count ++;
 			/* wait for a random number of seconds before trying to lock again*/
 			sleep((rand() % (max + 1)));
