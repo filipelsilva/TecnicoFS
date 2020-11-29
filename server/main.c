@@ -15,21 +15,22 @@
 #define OUTDIM 512
 
 int numberThreads = 0;
-char * serverName;
+
+/* Socket parameters */
+char* serverName;
 int sockfd;
 
 /* Syncronization lock */
-pthread_mutex_t call_vector;
+pthread_mutex_t mutex;
 
 /* Conditional syncronization */
 pthread_cond_t other_cond, print_cond;
-int prod_num = 0, cons_num = 0;
-int print_counter = 0;
+int is_printing = 0;
 
 /* Initializes locks */
 void sync_locks_init() {
-    if (pthread_mutex_init(&call_vector, NULL)) {
-        fprintf(stderr, "Error: could not initialize mutex: call_vector\n");
+    if (pthread_mutex_init(&mutex, NULL)) {
+        fprintf(stderr, "Error: could not initialize mutex: mutex\n");
     }
 
     if (pthread_cond_init(&other_cond, NULL)) {
@@ -50,23 +51,24 @@ void sync_locks_destroy() {
     if (pthread_cond_destroy(&other_cond)) {
         fprintf(stderr, "Error: could not destroy condition: other_cond\n");
     }
-    if (pthread_mutex_destroy(&call_vector)) {
-        fprintf(stderr, "Error: could not destroy mutex: call_vector\n");
+
+    if (pthread_mutex_destroy(&mutex)) {
+        fprintf(stderr, "Error: could not destroy mutex: mutex\n");
     }
 }
 
 /* Call vector -> syncronization lock enabler */
-void call_vector_lock() {
-    if (pthread_mutex_lock(&call_vector)) {
-        fprintf(stderr, "Error: could not lock mutex: call_vector\n");
+void mutex_lock() {
+    if (pthread_mutex_lock(&mutex)) {
+        fprintf(stderr, "Error: could not lock mutex: mutex\n");
     }
 }
 
 
 /* Call vector -> syncronization lock disabler */
-void call_vector_unlock() {
-    if (pthread_mutex_unlock(&call_vector)) {
-        fprintf(stderr, "Error: could not unlock mutex: call_vector\n");
+void mutex_unlock() {
+    if (pthread_mutex_unlock(&mutex)) {
+        fprintf(stderr, "Error: could not unlock mutex: mutex\n");
     }
 }
 
@@ -84,8 +86,14 @@ void signal(pthread_cond_t* cond) {
     }
 }
 
-int setSockAddrUn(char *path, struct sockaddr_un *addr) {
+/* Broadcasts (to all threads) the conditional wait to move on */
+void broadcast(pthread_cond_t* cond) {
+    if (pthread_cond_broadcast(cond)) {
+        fprintf(stderr, "Error: could not broadcast the condition variable\n");
+    }
+}
 
+int setSockAddrUn(char *path, struct sockaddr_un *addr) {
     if (addr == NULL)
         return 0;
 
@@ -97,21 +105,21 @@ int setSockAddrUn(char *path, struct sockaddr_un *addr) {
 }
 
 void argumentParser(int argc, char* argv[]) {
-	if (argc != 3) {
-		fprintf(stderr, "Error: invalid arguments\n");
-		exit(EXIT_FAILURE);
-	}
+    if (argc != 3) {
+        fprintf(stderr, "Error: invalid arguments\n");
+        exit(EXIT_FAILURE);
+    }
 
-	numberThreads = atoi(argv[1]);
-	serverName = argv[2];
+    numberThreads = atoi(argv[1]);
+    serverName = argv[2];
 
-	if (numberThreads < 1) {
-		fprintf(stderr, "Error: invalid number of threads\n");
-		exit(EXIT_FAILURE);
-	}
+    if (numberThreads < 1) {
+        fprintf(stderr, "Error: invalid number of threads\n");
+        exit(EXIT_FAILURE);
+    }
 }
 
-int fsMount(){
+int fsMount() {
     struct sockaddr_un server_addr;
     socklen_t addrlen;
 
@@ -121,18 +129,18 @@ int fsMount(){
     }
 
     unlink(serverName);
-    addrlen = setSockAddrUn (serverName, &server_addr);
+    addrlen = setSockAddrUn(serverName, &server_addr);
 
     if (bind(sockfd, (struct sockaddr *) &server_addr, addrlen) < 0) {
         fprintf(stderr, "server: bind error\n");
         exit(EXIT_FAILURE);
     }
 
-  return 0;
+    return 0;
 }
 
-int fsUnmount(){
-    if(close(sockfd) < 0){
+int fsUnmount() {
+    if (close(sockfd) < 0){
         fprintf(stderr, "client: close error \n");
         exit(EXIT_FAILURE);
     }
@@ -143,28 +151,6 @@ int fsUnmount(){
     }
 
     return 0;
-}
-
-int applyPrint(const char* command){
-    call_vector_lock();
-
-    while (print_counter == 0) {
-        cond_wait(&print_cond, &call_vector);
-    }
-
-    char token;
-    char filename[MAX_INPUT_SIZE];
-    sscanf(command, "%c %s", &token, filename);
-    int answer;
-
-    answer = print(filename);
-
-    print_counter --;
-
-    signal(&other_cond);
-    call_vector_unlock();
-
-    return answer;
 }
 
 int applyCommands(const char* command) {
@@ -188,7 +174,7 @@ int applyCommands(const char* command) {
                 default:
                     fprintf(stderr, "Error: invalid node type\n");
                     exit(EXIT_FAILURE);
-        }
+            }
 
         case 'l':
             searchResult = lookup(name);
@@ -201,38 +187,60 @@ int applyCommands(const char* command) {
                 return searchResult;
             }
 
-            case 'd':
-                return delete(name);
+        case 'd':
+            return delete(name);
 
-            case 'm':
-                return move(name, type);
+        case 'm':
+            return move(name, type);
 
-            default: { /* error */
-                fprintf(stderr, "Error: command to apply\n");
-                exit(EXIT_FAILURE);
-            }
+        default: { /* error */
+                     fprintf(stderr, "Error: command to apply\n");
+                     exit(EXIT_FAILURE);
+                 }
     }
 
     exit(EXIT_FAILURE);
 }
 
-int applyOther(const char* command){
-    call_vector_lock();
+int applyOther(const char* command) {
+    mutex_lock();
     int answer;
 
-    while (print_counter > 0) {
-        cond_wait(&other_cond, &call_vector);
+    while (is_printing) {
+        cond_wait(&other_cond, &mutex);
     }
 
     answer = applyCommands(command);
 
     signal(&print_cond);
-    call_vector_unlock();
+    mutex_unlock();
+    return answer;
+}
+
+int applyPrint(const char* command) {
+    mutex_lock();
+
+    while (!is_printing) {
+        cond_wait(&print_cond, &mutex);
+    }
+
+    char token;
+    char filename[MAX_INPUT_SIZE];
+    sscanf(command, "%c %s", &token, filename);
+    int answer;
+
+    answer = print(filename);
+
+    is_printing --;
+
+    signal(&other_cond);
+    mutex_unlock();
+
     return answer;
 }
 
 
-void *receiveCommands(){
+void *receiveCommands() {
     struct sockaddr_un client_addr;
     socklen_t addrlen;
     char in_buffer[INDIM];
@@ -241,23 +249,23 @@ void *receiveCommands(){
 
     addrlen = sizeof(struct sockaddr_un);
 
-    while(1){
+    while(1) {
         c = recvfrom(sockfd, in_buffer, sizeof(in_buffer)-1, 0,
-                 (struct sockaddr *)&client_addr, &addrlen);
+                (struct sockaddr *)&client_addr, &addrlen);
 
         if (c <= 0) continue;
 
         in_buffer[c]='\0';
 
-        if (in_buffer[0] == 'p'){
-            call_vector_lock();
-            print_counter ++;
-            call_vector_unlock();
+        if (in_buffer[0] == 'p') {
+            mutex_lock();
+            is_printing++;
+            mutex_unlock();
             printf("%s\n", in_buffer);
             answer = applyPrint(in_buffer);
         }
 
-        else{
+        else {
             printf("%s\n", in_buffer);
             answer = applyOther(in_buffer);
         }
@@ -273,22 +281,22 @@ void *receiveCommands(){
 
 /* process pool initializer and runner */
 void processPool() {
-	int i;
-	pthread_t tid[numberThreads];
+    int i;
+    pthread_t tid[numberThreads];
 
-	for (i = 0; i < numberThreads; i++) {
-		if (pthread_create(&tid[i], NULL, receiveCommands, NULL)) {
-			fprintf(stderr, "Error: could not create threads\n");
-			exit(EXIT_FAILURE);
-		}
-	}
+    for (i = 0; i < numberThreads; i++) {
+        if (pthread_create(&tid[i], NULL, receiveCommands, NULL)) {
+            fprintf(stderr, "Error: could not create threads\n");
+            exit(EXIT_FAILURE);
+        }
+    }
 
-	for (i = 0; i < numberThreads; i++) {
-		if (pthread_join(tid[i], NULL)) {
-			fprintf(stderr, "Error: could not join thread\n");
-			exit(EXIT_FAILURE);
-		}
-	}
+    for (i = 0; i < numberThreads; i++) {
+        if (pthread_join(tid[i], NULL)) {
+            fprintf(stderr, "Error: could not join thread\n");
+            exit(EXIT_FAILURE);
+        }
+    }
 
 }
 
@@ -303,13 +311,13 @@ int main(int argc, char* argv[]) {
 
     sync_locks_init();
 
-	processPool();
+    processPool();
 
-	sync_locks_destroy();
+    sync_locks_destroy();
 
-	fsUnmount();
+    fsUnmount();
 
-	/* release allocated memory */
-	destroy_fs();
-	exit(EXIT_SUCCESS);
+    /* release allocated memory */
+    destroy_fs();
+    exit(EXIT_SUCCESS);
 }
