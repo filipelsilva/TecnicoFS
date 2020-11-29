@@ -6,9 +6,7 @@
 #include <sys/un.h>
 #include <stdio.h>
 
-//#define CLIENT_SOCKET_NAME "/tmp/clientesocket"
-
-char * server_path;
+char *server_path;
 int sockfd;
 
 int setSockAddrUn(char *path, struct sockaddr_un *addr) {
@@ -31,7 +29,8 @@ int tfsCreate(char *filename, char nodeType) {
 
     sprintf(str, "c %s %c", filename, nodeType);
 
-    if (sendto(sockfd, str, strlen(str)+1, 0, (struct sockaddr *) &server_addr, server_len) < 0) {
+    if (sendto(sockfd, str, strlen(str)+1, 0,
+            (struct sockaddr *) &server_addr, server_len) < 0) {
         fprintf(stderr,"client: sendto error\n");
         exit(EXIT_FAILURE);
     }
@@ -53,7 +52,8 @@ int tfsDelete(char *path) {
 
     sprintf(str, "d %s", path);
 
-    if (sendto(sockfd, str, strlen(str)+1, 0, (struct sockaddr *) &server_addr, server_len) < 0) {
+    if (sendto(sockfd, str, strlen(str)+1, 0,
+            (struct sockaddr *) &server_addr, server_len) < 0) {
         fprintf(stderr,"client: sendto error\n");
         exit(EXIT_FAILURE);
     }
@@ -75,7 +75,8 @@ int tfsMove(char *from, char *to) {
 
     sprintf(str, "m %s %s", from, to);
 
-    if (sendto(sockfd, str, strlen(str)+1, 0, (struct sockaddr *) &server_addr, server_len) < 0) {
+    if (sendto(sockfd, str, strlen(str)+1, 0,
+            (struct sockaddr *) &server_addr, server_len) < 0) {
         fprintf(stderr,"client: sendto error\n");
         exit(EXIT_FAILURE);
     }
@@ -110,7 +111,7 @@ int tfsLookup(char *path) {
     return answer;
 }
 
-int tfsPrint(char *path){
+int tfsPrint(char *path) {
     socklen_t server_len;
     struct sockaddr_un server_addr;
     server_len = setSockAddrUn(server_path, &server_addr);
@@ -133,7 +134,7 @@ int tfsPrint(char *path){
 }
 
 
-int tfsMount(char * clientName, char * sockPath) {
+int tfsMount(char* clientName, char* sockPath) {
     socklen_t client_len;
     struct sockaddr_un client_addr;
     server_path = malloc((strlen(sockPath)+1));
@@ -144,7 +145,7 @@ int tfsMount(char * clientName, char * sockPath) {
     }
 
     unlink(clientName);
-    client_len = setSockAddrUn (clientName, &client_addr);
+    client_len = setSockAddrUn(clientName, &client_addr);
 
     if (bind(sockfd, (struct sockaddr *) &client_addr, client_len) < 0) {
         fprintf(stderr,"client: bind error\n");
@@ -156,8 +157,7 @@ int tfsMount(char * clientName, char * sockPath) {
     return 0;
 }
 
-int tfsUnmount(char *clientName) {
-
+int tfsUnmount(char* clientName) {
     if(close(sockfd) < 0){
         fprintf(stderr, "client: close error \n");
         exit(EXIT_FAILURE);
