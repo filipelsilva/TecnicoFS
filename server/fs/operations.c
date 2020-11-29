@@ -448,6 +448,14 @@ int move(char* current_pathname, char* new_pathname) {
 	new_parent_inumber = lookup(new_parent_name);
 	current_parent_inumber = lookup(current_parent_name);
 
+	/* checks if there is a directory/file with the current pathname*/
+	if (new_parent_inumber == FAIL) {
+		printf("Moving: %s to %s\n", current_pathname_copy, new_pathname_copy);
+		printf("failed to move %s to %s, %s doesn't exist\n",
+				current_pathname, new_pathname, current_parent_name);
+		return FAIL;
+	}
+	
 	/* Example: "m /a /a/a". Prevent loops */
 	if (new_parent_inumber != 0 && strstr(current_pathname_copy, new_parent_name) != NULL) {
 		printf("Moving: %s to %s\n", current_pathname_copy, new_pathname_copy);
