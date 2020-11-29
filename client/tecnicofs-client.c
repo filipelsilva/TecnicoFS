@@ -1,28 +1,32 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include "tecnicofs-client-api.h"
 #include "../tecnicofs-api-constants.h"
 
-FILE* inputFile;
-char* serverName, *clientName;
+#define CLIENTNAME "/tmp/clientsocket-"
 
-static void displayUsage (const char* appName) {
+FILE* inputFile;
+char* serverName, clientName[MAX_FILE_NAME];
+
+static void displayUsage(const char* appName) {
     printf("Usage: %s inputfile server_socket_name\n", appName);
     exit(EXIT_FAILURE);
 }
 
-static void parseArgs (long argc, char* const argv[]) {
-    if (argc != 4) {
+static void parseArgs(long argc, char* const argv[]) {
+    if (argc != 3) {
         fprintf(stderr, "Invalid format:\n");
         displayUsage(argv[0]);
     }
 
-    clientName = argv[2];
-    serverName = argv[3];
+    serverName = argv[2];
 
     inputFile = fopen(argv[1], "r");
 
-    if (inputFile== NULL) {
+    if (inputFile == NULL) {
         fprintf(stderr, "Error: cannot open input file\n");
         exit(EXIT_FAILURE);
     }
@@ -57,16 +61,16 @@ void *processInput() {
                     case 'f':
                         res = tfsCreate(arg1, 'f');
                         if (!res)
-                          printf("Created file: %s\n", arg1);
+                            printf("Created file: %s\n", arg1);
                         else
-                          printf("Unable to create file: %s\n", arg1);
+                            printf("Unable to create file: %s\n", arg1);
                         break;
                     case 'd':
                         res = tfsCreate(arg1, 'd');
                         if (!res)
-                          printf("Created directory: %s\n", arg1);
+                            printf("Created directory: %s\n", arg1);
                         else
-                          printf("Unable to create directory: %s\n", arg1);
+                            printf("Unable to create directory: %s\n", arg1);
                         break;
                     default:
                         fprintf(stderr, "Error: invalid node type\n");
@@ -86,18 +90,18 @@ void *processInput() {
                     errorParse();
                 res = tfsDelete(arg1);
                 if (!res)
-                  printf("Deleted: %s\n", arg1);
+                    printf("Deleted: %s\n", arg1);
                 else
-                  printf("Unable to delete: %s\n", arg1);
+                    printf("Unable to delete: %s\n", arg1);
                 break;
             case 'm':
                 if(numTokens != 3)
                     errorParse();
                 res = tfsMove(arg1, arg2);
                 if (!res)
-                  printf("Moved: %s to %s\n", arg1, arg2);
+                    printf("Moved: %s to %s\n", arg1, arg2);
                 else
-                  printf("Unable to move: %s to %s\n", arg1, arg2);
+                    printf("Unable to move: %s to %s\n", arg1, arg2);
                 break;
             case 'p':
                 if(numTokens != 2)
@@ -111,22 +115,30 @@ void *processInput() {
             case '#':
                 break;
             default: { /* error */
-                errorParse();
-            }
+                         errorParse();
+                     }
         }
     }
     fclose(inputFile);
     return NULL;
 }
 
+void updateClientName() {
+    char pid[10];
+    sprintf(pid, "%d", getpid());
+    strcat(clientName, CLIENTNAME);
+    strcat(clientName, pid);
+}
+
 int main(int argc, char* argv[]) {
     parseArgs(argc, argv);
+    updateClientName();
 
     if (tfsMount(clientName, serverName) == 0)
-      printf("Mounted! (socket = %s)\n", serverName);
+        printf("Mounted! (socket = %s)\n", serverName);
     else {
-      fprintf(stderr, "Unable to mount socket: %s\n", serverName);
-      exit(EXIT_FAILURE);
+        fprintf(stderr, "Unable to mount socket: %s\n", serverName);
+        exit(EXIT_FAILURE);
     }
 
     processInput();
