@@ -30,7 +30,7 @@ int tfsCreate(char *filename, char nodeType) {
     sprintf(str, "c %s %c", filename, nodeType);
 
     if (sendto(sockfd, str, strlen(str)+1, 0,
-            (struct sockaddr *) &server_addr, server_len) < 0) {
+                (struct sockaddr *) &server_addr, server_len) < 0) {
         fprintf(stderr,"client: sendto error\n");
         exit(EXIT_FAILURE);
     }
@@ -53,7 +53,7 @@ int tfsDelete(char *path) {
     sprintf(str, "d %s", path);
 
     if (sendto(sockfd, str, strlen(str)+1, 0,
-            (struct sockaddr *) &server_addr, server_len) < 0) {
+                (struct sockaddr *) &server_addr, server_len) < 0) {
         fprintf(stderr,"client: sendto error\n");
         exit(EXIT_FAILURE);
     }
@@ -76,7 +76,7 @@ int tfsMove(char *from, char *to) {
     sprintf(str, "m %s %s", from, to);
 
     if (sendto(sockfd, str, strlen(str)+1, 0,
-            (struct sockaddr *) &server_addr, server_len) < 0) {
+                (struct sockaddr *) &server_addr, server_len) < 0) {
         fprintf(stderr,"client: sendto error\n");
         exit(EXIT_FAILURE);
     }
@@ -98,7 +98,8 @@ int tfsLookup(char *path) {
 
     sprintf(str, "l %s", path);
 
-    if (sendto(sockfd, str, strlen(str)+1, 0, (struct sockaddr *) &server_addr, server_len) < 0) {
+    if (sendto(sockfd, str, strlen(str)+1, 0,
+                (struct sockaddr *) &server_addr, server_len) < 0) {
         fprintf(stderr,"client: sendto error\n");
         exit(EXIT_FAILURE);
     }
@@ -120,7 +121,8 @@ int tfsPrint(char *path) {
 
     sprintf(str, "p %s", path);
 
-    if (sendto(sockfd, str, strlen(str)+1, 0, (struct sockaddr *) &server_addr, server_len) < 0) {
+    if (sendto(sockfd, str, strlen(str)+1, 0,
+                (struct sockaddr *) &server_addr, server_len) < 0) {
         fprintf(stderr,"client: sendto error\n");
         exit(EXIT_FAILURE);
     }
