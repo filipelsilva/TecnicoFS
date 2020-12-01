@@ -230,7 +230,6 @@ void *receiveCommands() {
         if (c <= 0) continue;
 
         in_buffer[c]='\0';
-        printf("%s\n", in_buffer);
 
         if (in_buffer[0] == 'p') {
             mutex_lock();
