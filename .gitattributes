@@ -1,0 +1,3 @@
+client/inputs_extra export-ignore  
+.gitattributes export-ignore  
+.gitignore export-ignore
