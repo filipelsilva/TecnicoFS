@@ -9,10 +9,8 @@
 #include <sys/un.h>
 #include "fs/operations.h"
 
-#define MAX_COMMANDS 10
 #define MAX_INPUT_SIZE 100
 #define INDIM 30
-#define OUTDIM 512
 
 int numberThreads = 0;
 

@@ -452,7 +452,7 @@ int move(char* current_pathname, char* new_pathname) {
 	if (new_parent_inumber == FAIL) {
 		printf("Moving: %s to %s\n", current_pathname_copy, new_pathname_copy);
 		printf("failed to move %s to %s, %s doesn't exist\n",
-				current_pathname, new_pathname, current_parent_name);
+				current_pathname, new_pathname, new_parent_name);
 		return FAIL;
 	}
 	
