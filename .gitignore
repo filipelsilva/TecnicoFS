@@ -11,6 +11,7 @@ outputfile
 outputs
 cmake-build-debug
 .idea
+/client/inputs_extra
 CMakeLists.txt
 
 ## Pre-existing conditions
