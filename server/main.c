@@ -233,9 +233,13 @@ void *receiveCommands() {
         printf("%s\n", in_buffer);
 
         if (in_buffer[0] == 'p') {
+            mutex_lock();
             is_printing = 1;
+            mutex_unlock();
             answer = applyPrint(in_buffer);
+            mutex_lock();
             is_printing = 0;
+            mutex_unlock();
         }
         else
             answer = applyOther(in_buffer);
