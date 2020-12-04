@@ -160,7 +160,9 @@ int tfsMount(char* clientName, char* sockPath) {
 }
 
 int tfsUnmount(char* clientName) {
-    if(close(sockfd) < 0){
+    free(server_path);
+
+    if (close(sockfd) < 0){
         fprintf(stderr, "client: close error \n");
         exit(EXIT_FAILURE);
     }
